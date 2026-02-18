@@ -1,52 +1,115 @@
-import { useState, useEffect } from "react";
-import React from "react";
-import { Pie } from "react-chartjs-2";
-import "chart.js/auto";
+import { useMemo } from 'react'
 
-function Dashboard() {
-  const [transactions, setTransactions] = useState([]);
+const Dashboard = ({ transactions, budgets }) => {
+  const stats = useMemo(() => {
+    const totalIncome = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+    
+    const totalExpenses = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+    
+    const balance = totalIncome - totalExpenses
+    
+    return { totalIncome, totalExpenses, balance }
+  }, [transactions])
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("transactions"));
-    if (saved) setTransactions(saved);
-  }, []);
+  const categoryExpenses = useMemo(() => {
+    const expenses = transactions.filter(t => t.type === 'expense')
+    const categoryTotals = {}
+    
+    expenses.forEach(expense => {
+      categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + parseFloat(expense.amount)
+    })
+    
+    return Object.entries(categoryTotals).map(([category, amount]) => ({
+      category,
+      amount,
+      budget: budgets.find(b => b.category === category)?.amount || 0
+    }))
+  }, [transactions, budgets])
 
-  const income = transactions
-    .filter(t => t.type === "Income")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const expense = transactions
-    .filter(t => t.type === "Expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const balance = income - expense;
-
-  const categories = [...new Set(transactions.map(t => t.category))];
-
-  const categoryTotals = categories.map(cat =>
-    transactions
-      .filter(t => t.category === cat && t.type === "Expense")
-      .reduce((sum, t) => sum + t.amount, 0)
-  );
-
-  const pieData = {
-    labels: categories,
-    datasets: [{ data: categoryTotals }]
-  };
+  const recentTransactions = transactions
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5)
 
   return (
-    <div className={ "grid-3" }>
-      <h2>Dashboard</h2>
-      <h3>Total Income: ${income.toFixed(2)}</h3>
-      <h3>Total Expense: ${expense.toFixed(2)}</h3>
-      <h3>Net Balance: ${balance.toFixed(2)}</h3>
+    <div className="dashboard">
+      <h1>Dashboard</h1>
+      
+      <div className="stats-grid">
+        <div className="stat-card income">
+          <h3>Total Income</h3>
+          <p className="amount">${stats.totalIncome.toFixed(2)}</p>
+        </div>
+        
+        <div className="stat-card expense">
+          <h3>Total Expenses</h3>
+          <p className="amount">${stats.totalExpenses.toFixed(2)}</p>
+        </div>
+        
+        <div className={`stat-card balance ${stats.balance >= 0 ? 'positive' : 'negative'}`}>
+          <h3>Balance</h3>
+          <p className="amount">${stats.balance.toFixed(2)}</p>
+        </div>
+      </div>
 
-      <Pie data={pieData} />
+      <div className="dashboard-content">
+        <div className="budget-overview">
+          <h2>Budget Overview</h2>
+          {categoryExpenses.length > 0 ? (
+            <div className="budget-list">
+              {categoryExpenses.map(({ category, amount, budget }) => (
+                <div key={category} className="budget-item">
+                  <div className="budget-header">
+                    <span className="category">{category}</span>
+                    <span className="amounts">
+                      ${amount.toFixed(2)} / ${budget.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="progress-bar">
+                    <div 
+                      className={`progress-fill ${amount > budget ? 'over-budget' : ''}`}
+                      style={{ width: `${Math.min((amount / budget) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                  <div className="budget-status">
+                    {amount > budget && (
+                      <span className="over-budget-text">Over budget by ${(amount - budget).toFixed(2)}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No expenses yet. Start adding transactions!</p>
+          )}
+        </div>
+
+        <div className="recent-transactions">
+          <h2>Recent Transactions</h2>
+          {recentTransactions.length > 0 ? (
+            <div className="transaction-list">
+              {recentTransactions.map(transaction => (
+                <div key={transaction.id} className={`transaction-item ${transaction.type}`}>
+                  <div className="transaction-info">
+                    <span className="description">{transaction.description}</span>
+                    <span className="category">{transaction.category}</span>
+                  </div>
+                  <span className={`amount ${transaction.type}`}>
+                    {transaction.type === 'income' ? '+' : '-'}${transaction.amount}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No transactions yet. Add your first transaction!</p>
+          )}
+        </div>
+      </div>
     </div>
-  );
-  
+  )
 }
 
-
-
-export default Dashboard;
+export default Dashboard

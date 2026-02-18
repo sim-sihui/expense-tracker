@@ -1,63 +1,196 @@
-import { useState, useEffect } from "react";
+import { useState } from 'react'
 
-function Budget() {
-  const [transactions, setTransactions] = useState([]);
-  const [budgets, setBudgets] = useState({});
+const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBudget }) => {
+  const [showForm, setShowForm] = useState(false)
+  const [editingBudget, setEditingBudget] = useState(null)
+  const [formData, setFormData] = useState({
+    category: '',
+    amount: '',
+    period: 'monthly'
+  })
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("transactions"));
-    const savedBudgets = JSON.parse(localStorage.getItem("budgets"));
-    if (saved) setTransactions(saved);
-    if (savedBudgets) setBudgets(savedBudgets);
-  }, []);
+  const categories = [
+    'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
+    'Bills & Utilities', 'Healthcare', 'Travel', 'Education', 'Other'
+  ]
 
-  useEffect(() => {
-    localStorage.setItem("budgets", JSON.stringify(budgets));
-  }, [budgets]);
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!formData.category || !formData.amount) return
 
-  const categories = [...new Set(transactions.map(t => t.category))];
+    const budgetData = {
+      ...formData,
+      amount: parseFloat(formData.amount)
+    }
 
-  const annualIncome = transactions
-    .filter(t => t.type === "Income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    if (editingBudget) {
+      onUpdateBudget(editingBudget.id, budgetData)
+      setEditingBudget(null)
+    } else {
+      onAddBudget(budgetData)
+    }
 
-  const annualExpense = transactions
-    .filter(t => t.type === "Expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+    setFormData({ category: '', amount: '', period: 'monthly' })
+    setShowForm(false)
+  }
+
+  const handleEdit = (budget) => {
+    setEditingBudget(budget)
+    setFormData({
+      category: budget.category,
+      amount: budget.amount.toString(),
+      period: budget.period
+    })
+    setShowForm(true)
+  }
+
+  const calculateSpent = (category) => {
+    return transactions
+      .filter(t => t.type === 'expense' && t.category === category)
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+  }
 
   return (
-    <div style={{ padding: 30 }}>
-      <h2>Monthly Budget</h2>
+    <div className="budget">
+      <div className="budget-header">
+        <h1>Budget Management</h1>
+        <button 
+          className="btn btn-primary"
+          onClick={() => setShowForm(true)}
+        >
+          Add Budget
+        </button>
+      </div>
 
-      {categories.map(cat => {
-        const spent = transactions
-          .filter(t => t.category === cat && t.type === "Expense")
-          .reduce((sum, t) => sum + t.amount, 0);
+      {showForm && (
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2>{editingBudget ? 'Edit Budget' : 'Add New Budget'}</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Category</label>
+                <select
+                  value={formData.category}
+                  onChange={e => setFormData({...formData, category: e.target.value})}
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
 
-        const budget = budgets[cat] || 0;
+              <div className="form-group">
+                <label>Budget Amount ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={e => setFormData({...formData, amount: e.target.value})}
+                  required
+                />
+              </div>
 
-        return (
-          <div key={cat}>
-            {cat} |
-            Budget:
-            <input
-              type="number"
-              value={budget}
-              onChange={(e) =>
-                setBudgets({ ...budgets, [cat]: Number(e.target.value) })
-              }
-            />
-            | Spent: ${spent.toFixed(2)}
+              <div className="form-group">
+                <label>Period</label>
+                <select
+                  value={formData.period}
+                  onChange={e => setFormData({...formData, period: e.target.value})}
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+
+              <div className="form-actions">
+                <button type="button" onClick={() => {
+                  setShowForm(false)
+                  setEditingBudget(null)
+                  setFormData({ category: '', amount: '', period: 'monthly' })
+                }}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  {editingBudget ? 'Update Budget' : 'Add Budget'}
+                </button>
+              </div>
+            </form>
           </div>
-        );
-      })}
+        </div>
+      )}
 
-      <h2>Annual Overview</h2>
-      <p>Total Income: ${annualIncome.toFixed(2)}</p>
-      <p>Total Expense: ${annualExpense.toFixed(2)}</p>
-      <p>Savings: ${(annualIncome - annualExpense).toFixed(2)}</p>
+      <div className="budget-list">
+        {budgets.length > 0 ? (
+          budgets.map(budget => {
+            const spent = calculateSpent(budget.category)
+            const remaining = budget.amount - spent
+            const percentage = (spent / budget.amount) * 100
+
+            return (
+              <div key={budget.id} className="budget-card">
+                <div className="budget-card-header">
+                  <h3>{budget.category}</h3>
+                  <div className="budget-actions">
+                    <button onClick={() => handleEdit(budget)}>Edit</button>
+                    <button 
+                      onClick={() => onDeleteBudget(budget.id)}
+                      className="delete-btn"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="budget-amounts">
+                  <div className="amount-row">
+                    <span>Budget:</span>
+                    <span>${budget.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="amount-row">
+                    <span>Spent:</span>
+                    <span className={spent > budget.amount ? 'over-budget' : ''}>
+                      ${spent.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="amount-row">
+                    <span>Remaining:</span>
+                    <span className={remaining < 0 ? 'over-budget' : 'remaining'}>
+                      ${remaining.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="progress-container">
+                  <div className="progress-bar">
+                    <div 
+                      className={`progress-fill ${percentage > 100 ? 'over-budget' : ''}`}
+                      style={{ width: `${Math.min(percentage, 100)}%` }}
+                    ></div>
+                  </div>
+                  <span className="percentage">{percentage.toFixed(1)}%</span>
+                </div>
+
+                <div className="period-info">
+                  <span className="period-badge">{budget.period}</span>
+                  {percentage > 100 && (
+                    <span className="over-budget-warning">
+                      Over budget by ${(spent - budget.amount).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="empty-state">
+            <p>No budgets set yet. Create your first budget to start tracking your spending!</p>
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }
 
-export default Budget;
+export default Budget
