@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { formatMoney } from '../utils/formatMoney'
+import Calculator from './Calculator'
+import SalaryBreakdown from './SalaryBreakdown'
 
 const PRESET_CATEGORIES = [
   'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
@@ -37,6 +39,12 @@ const emptyForm = {
   cashbackBnpl: 'None',
 }
 
+// Returns "Jan 2026" style key from a date string
+const toMonthKey = (dateStr) => {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('en-SG', { month: 'short', year: 'numeric' })
+}
+
 const Transaction = ({
   transactions,
   onAddTransaction,
@@ -46,17 +54,16 @@ const Transaction = ({
   onAddCustomCategory,
 }) => {
   const [showForm, setShowForm] = useState(false)
-  const [formMode, setFormMode] = useState('simple')   // 'simple' | 'detailed'
+  const [formMode, setFormMode] = useState('simple')
   const [formData, setFormData] = useState(emptyForm)
-  const [filter, setFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')   // all | income | expense
+  const [monthFilter, setMonthFilter] = useState('all') // all | "Jan 2026" etc
   const [expandedId, setExpandedId] = useState(null)
-  const [editingId, setEditingId] = useState(null) // null = adding, id = editing
+  const [editingId, setEditingId] = useState(null)
+  const [showCalc, setShowCalc] = useState(false)
 
-  // Merge preset + custom categories (deduplicated)
   const allCategories = [...PRESET_CATEGORIES]
-  customCategories.forEach(c => {
-    if (!allCategories.includes(c)) allCategories.push(c)
-  })
+  customCategories.forEach(c => { if (!allCategories.includes(c)) allCategories.push(c) })
 
   const isDetailed = formMode === 'detailed'
   const isCustomCategory = formData.category === '__custom__'
@@ -64,43 +71,49 @@ const Transaction = ({
 
   const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }))
 
+  // ── Derive sorted unique months from all transactions ──────────────────
+  const availableMonths = Array.from(
+    new Set(transactions.map(t => toMonthKey(t.date)))
+  ).sort((a, b) => new Date(b) - new Date(a)) // newest first
+
+  // ── Filtering ──────────────────────────────────────────────────────────
+  const filteredTransactions = transactions
+    .filter(t => typeFilter === 'all' || t.type === typeFilter)
+    .filter(t => monthFilter === 'all' || toMonthKey(t.date) === monthFilter)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  // Summary based on currently filtered month (or all)
+  const summaryBase = monthFilter === 'all' ? transactions : transactions.filter(t => toMonthKey(t.date) === monthFilter)
+  const totalIncome   = summaryBase.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  const totalExpenses = summaryBase.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  // Always use all income for the salary breakdown
+  const allTimeIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+
+  // ── Form helpers ───────────────────────────────────────────────────────
   const handleSubmit = (e) => {
     e.preventDefault()
     const finalCategory = isCustomCategory ? formData.customCategory : formData.category
-    const finalAccount = isCustomAccount ? formData.customAccount : formData.account
+    const finalAccount  = isCustomAccount  ? formData.customAccount  : formData.account
     if (!formData.amount || !finalCategory || !formData.description || !formData.date) return
 
-    // If the user typed a custom category, persist it
     if (isCustomCategory && formData.customCategory.trim()) {
       onAddCustomCategory(formData.customCategory.trim())
     }
 
-    const payload = {
-      ...formData,
-      category: finalCategory,
-      account: finalAccount,
-      amount: parseFloat(formData.amount),
-    }
-
-    if (editingId !== null) {
-      onUpdateTransaction(editingId, payload)
-    } else {
-      onAddTransaction(payload)
-    }
+    const payload = { ...formData, category: finalCategory, account: finalAccount, amount: parseFloat(formData.amount) }
+    editingId !== null ? onUpdateTransaction(editingId, payload) : onAddTransaction(payload)
 
     setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
-    setEditingId(null)
-    setShowForm(false)
+    setEditingId(null); setShowForm(false); setShowCalc(false)
   }
 
   const openForm = () => {
     setEditingId(null)
     setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
-    setShowForm(true)
+    setShowCalc(false); setShowForm(true)
   }
 
   const openEditForm = (t) => {
-    // Check if the category is in the allCategories list; if not, it's a custom one already saved
     const categoryInList = allCategories.includes(t.category)
     setEditingId(t.id)
     setFormData({
@@ -117,27 +130,14 @@ const Transaction = ({
       needWant: t.needWant || 'need',
       cashbackBnpl: t.cashbackBnpl || 'None',
     })
-    // auto-switch to detailed if the transaction has detailed fields
-    if (t.event || t.account || t.paymentType || (t.cashbackBnpl && t.cashbackBnpl !== 'None')) {
-      setFormMode('detailed')
-    } else {
-      setFormMode('simple')
-    }
-    setShowForm(true)
+    setFormMode(t.event || t.account || t.paymentType || (t.cashbackBnpl && t.cashbackBnpl !== 'None') ? 'detailed' : 'simple')
+    setShowCalc(false); setShowForm(true)
   }
 
   const closeForm = () => {
-    setShowForm(false)
-    setEditingId(null)
+    setShowForm(false); setEditingId(null); setShowCalc(false)
     setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
   }
-
-  const filteredTransactions = transactions
-    .filter(t => filter === 'all' || t.type === filter)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
 
   return (
     <div className="transaction">
@@ -146,209 +146,267 @@ const Transaction = ({
         <button className="btn btn-primary" onClick={openForm}>+ Add Transaction</button>
       </div>
 
+      {/* Summary cards — reflect selected month */}
       <div className="transaction-summary">
         <div className="summary-card income">
-          <h3>Total Income</h3>
+          <h3>Total Income {monthFilter !== 'all' && <span style={{ fontWeight: 400, fontSize: '0.75rem', opacity: 0.7 }}>({monthFilter})</span>}</h3>
           <p>${formatMoney(totalIncome)}</p>
         </div>
         <div className="summary-card expense">
-          <h3>Total Expenses</h3>
+          <h3>Total Expenses {monthFilter !== 'all' && <span style={{ fontWeight: 400, fontSize: '0.75rem', opacity: 0.7 }}>({monthFilter})</span>}</h3>
           <p>${formatMoney(totalExpenses)}</p>
         </div>
         <div className={`summary-card balance ${totalIncome - totalExpenses >= 0 ? 'positive' : 'negative'}`}>
           <h3>Net Balance</h3>
           <p>${formatMoney(totalIncome - totalExpenses)}</p>
-
-
         </div>
       </div>
 
-      {/* ── Modal ─────────────────────────────────────────────────────── */}
+      {/* Income allocation — always based on all-time income */}
+      <SalaryBreakdown totalIncome={allTimeIncome} />
+
+      {/* ── Modal ── */}
       {showForm && (
-        <div className="modal-overlay" onClick={closeForm}>
+        <div className="modal-overlay" onClick={closeForm} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div
-            className={`modal-content ${isDetailed ? 'modal-wide' : 'modal-narrow'}`}
+            style={{
+              display: 'flex',
+              alignItems: 'stretch',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+              maxHeight: '90vh',
+              width: showCalc ? '680px' : '460px',
+              maxWidth: '95vw',
+            }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Header + close */}
-            <div className="modal-header">
-              <h2>{editingId !== null ? 'Edit Transaction' : 'Add New Transaction'}</h2>
-              <button className="modal-close" onClick={closeForm}>✕</button>
-            </div>
-
-            {/* ── Simple / Detailed toggle ── */}
-            <div className="mode-toggle">
-              <button
-                className={`mode-btn ${formMode === 'simple' ? 'mode-active' : ''}`}
-                onClick={() => setFormMode('simple')}
-              >
-                ⚡ Simple
-              </button>
-              <button
-                className={`mode-btn ${formMode === 'detailed' ? 'mode-active' : ''}`}
-                onClick={() => setFormMode('detailed')}
-              >
-                🗂️ Detailed
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-
-              {/* ── SIMPLE FIELDS (always visible) ── */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Type</label>
-                  <select value={formData.type} onChange={e => set('type', e.target.value)}>
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Date</label>
-                  <input type="date" value={formData.date}
-                    max={new Date().toISOString().split('T')[0]}
-                    onChange={e => set('date', e.target.value)} required />
-                </div>
+            {/* Form panel */}
+            <div style={{ background: '#fff', flex: 1, minWidth: 0, overflowY: 'auto', padding: '1.5rem' }}>
+              <div className="modal-header">
+                <h2>{editingId !== null ? 'Edit Transaction' : 'Add New Transaction'}</h2>
+                <button className="modal-close" onClick={closeForm}>✕</button>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Amount ($)</label>
-                  <input type="number" step="0.01" min="0" placeholder="0.00"
-                    value={formData.amount}
-                    onChange={e => set('amount', e.target.value)} required />
-                </div>
+              <div className="mode-toggle">
+                <button className={`mode-btn ${formMode === 'simple' ? 'mode-active' : ''}`} onClick={() => setFormMode('simple')}>⚡ Simple</button>
+                <button className={`mode-btn ${formMode === 'detailed' ? 'mode-active' : ''}`} onClick={() => setFormMode('detailed')}>🗂️ Detailed</button>
+              </div>
 
-                <div className="form-group">
-                  <label>Category</label>
-                  <select value={formData.category}
-                    onChange={e => set('category', e.target.value)} required>
-                    <option value="">Select category</option>
-                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="__custom__">＋ Add my own…</option>
-                  </select>
-                </div>
-
-                {isCustomCategory && (
+              <form onSubmit={handleSubmit}>
+                <div className="form-row">
                   <div className="form-group">
-                    <label>Custom Category</label>
-                    <input type="text" placeholder="e.g. Pet Care"
-                      value={formData.customCategory}
-                      onChange={e => set('customCategory', e.target.value)} required />
+                    <label>Type</label>
+                    <select value={formData.type} onChange={e => set('type', e.target.value)}>
+                      <option value="expense">Expense</option>
+                      <option value="income">Income</option>
+                    </select>
                   </div>
-                )}
-              </div>
-
-              <div className="form-row">
-                <div className="form-group form-group-full">
-                  <label>Description</label>
-                  <input type="text" placeholder="e.g. Lunch at Maxwell"
-                    value={formData.description}
-                    onChange={e => set('description', e.target.value)} required />
+                  <div className="form-group">
+                    <label>Date</label>
+                    <input type="date" value={formData.date}
+                      max={new Date().toISOString().split('T')[0]}
+                      onChange={e => set('date', e.target.value)} required />
+                  </div>
                 </div>
-              </div>
 
-              {/* ── DETAILED FIELDS (only when mode === 'detailed') ── */}
-              {isDetailed && (
-                <div className="detailed-fields">
-
-                  <div className="form-section-title">Event</div>
-                  <div className="form-row">
-                    <div className="form-group form-group-full">
-                      <label>Event <span className="label-optional">(optional)</span></label>
-                      <input type="text" placeholder="e.g. Birthday dinner, NDP, Company retreat"
-                        value={formData.event}
-                        onChange={e => set('event', e.target.value)} />
+                {/* Amount + calc toggle */}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Amount ($)</label>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <input
+                        type="number" step="0.01" min="0" placeholder="0.00"
+                        value={formData.amount}
+                        onChange={e => set('amount', e.target.value)}
+                        required style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        title="Open calculator (or type with keyboard)"
+                        onClick={() => setShowCalc(p => !p)}
+                        style={{
+                          height: '38px', padding: '0 10px',
+                          border: `1px solid ${showCalc ? '#6366f1' : '#e2e8f0'}`,
+                          borderRadius: '8px',
+                          background: showCalc ? '#6366f1' : '#f8fafc',
+                          fontSize: '1rem', cursor: 'pointer', flexShrink: 0,
+                        }}
+                      >🧮</button>
                     </div>
                   </div>
 
-                  <div className="form-section-title">Payment</div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Account / Card</label>
-                      <select value={formData.account} onChange={e => set('account', e.target.value)}>
-                        <option value="">Select account</option>
-                        {ACCOUNTS.map(a => <option key={a} value={a}>{a}</option>)}
-                        <option value="__custom__">＋ Add my own…</option>
-                      </select>
-                    </div>
-
-                    {isCustomAccount && (
-                      <div className="form-group">
-                        <label>Custom Account</label>
-                        <input type="text" placeholder="e.g. Revolut"
-                          value={formData.customAccount}
-                          onChange={e => set('customAccount', e.target.value)} />
-                      </div>
-                    )}
-
-                    <div className="form-group">
-                      <label>Payment Type</label>
-                      <select value={formData.paymentType} onChange={e => set('paymentType', e.target.value)}>
-                        <option value="">Select type</option>
-                        {PAYMENT_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
+                  <div className="form-group">
+                    <label>Category</label>
+                    <select value={formData.category} onChange={e => set('category', e.target.value)} required>
+                      <option value="">Select category</option>
+                      {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="__custom__">＋ Add my own…</option>
+                    </select>
                   </div>
 
-                  {formData.type === 'expense' && (
-                    <>
-                      <div className="form-section-title">Classification</div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Need / Want</label>
-                          <div className="toggle-group">
-                            <button type="button"
-                              className={`toggle-btn ${formData.needWant === 'need' ? 'active-need' : ''}`}
-                              onClick={() => set('needWant', 'need')}>
-                              🛒 Need
-                            </button>
-                            <button type="button"
-                              className={`toggle-btn ${formData.needWant === 'want' ? 'active-want' : ''}`}
-                              onClick={() => set('needWant', 'want')}>
-                              🛍️ Want
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="form-group">
-                          <label>Cashback / BNPL</label>
-                          <select value={formData.cashbackBnpl} onChange={e => set('cashbackBnpl', e.target.value)}>
-                            {CASHBACK_BNPL.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    </>
+                  {isCustomCategory && (
+                    <div className="form-group">
+                      <label>Custom Category</label>
+                      <input type="text" placeholder="e.g. Pet Care"
+                        value={formData.customCategory}
+                        onChange={e => set('customCategory', e.target.value)} required />
+                    </div>
                   )}
                 </div>
-              )}
 
-              <div className="form-actions">
-                <button type="button" onClick={closeForm}>Cancel</button>
-                <button type="submit" className="btn btn-primary">
-                  {editingId !== null ? 'Save Changes' : 'Add Transaction'}
-                </button>
-              </div>
-            </form>
+                <div className="form-row">
+                  <div className="form-group form-group-full">
+                    <label>Description</label>
+                    <input type="text" placeholder="e.g. Lunch at Maxwell"
+                      value={formData.description}
+                      onChange={e => set('description', e.target.value)} required />
+                  </div>
+                </div>
+
+                {isDetailed && (
+                  <div className="detailed-fields">
+                    <div className="form-section-title">Event</div>
+                    <div className="form-row">
+                      <div className="form-group form-group-full">
+                        <label>Event <span className="label-optional">(optional)</span></label>
+                        <input type="text" placeholder="e.g. Birthday dinner, NDP, Company retreat"
+                          value={formData.event} onChange={e => set('event', e.target.value)} />
+                      </div>
+                    </div>
+
+                    <div className="form-section-title">Payment</div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Account / Card</label>
+                        <select value={formData.account} onChange={e => set('account', e.target.value)}>
+                          <option value="">Select account</option>
+                          {ACCOUNTS.map(a => <option key={a} value={a}>{a}</option>)}
+                          <option value="__custom__">＋ Add my own…</option>
+                        </select>
+                      </div>
+                      {isCustomAccount && (
+                        <div className="form-group">
+                          <label>Custom Account</label>
+                          <input type="text" placeholder="e.g. Revolut"
+                            value={formData.customAccount} onChange={e => set('customAccount', e.target.value)} />
+                        </div>
+                      )}
+                      <div className="form-group">
+                        <label>Payment Type</label>
+                        <select value={formData.paymentType} onChange={e => set('paymentType', e.target.value)}>
+                          <option value="">Select type</option>
+                          {PAYMENT_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {formData.type === 'expense' && (
+                      <>
+                        <div className="form-section-title">Classification</div>
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Need / Want</label>
+                            <div className="toggle-group">
+                              <button type="button" className={`toggle-btn ${formData.needWant === 'need' ? 'active-need' : ''}`} onClick={() => set('needWant', 'need')}>🛒 Need</button>
+                              <button type="button" className={`toggle-btn ${formData.needWant === 'want' ? 'active-want' : ''}`} onClick={() => set('needWant', 'want')}>🛍️ Want</button>
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label>Cashback / BNPL</label>
+                            <select value={formData.cashbackBnpl} onChange={e => set('cashbackBnpl', e.target.value)}>
+                              {CASHBACK_BNPL.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div className="form-actions">
+                  <button type="button" onClick={closeForm}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">
+                    {editingId !== null ? 'Save Changes' : 'Add Transaction'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Calculator — fixed width, never stretches */}
+            {showCalc && (
+              <Calculator
+                onApply={(val) => set('amount', val)}
+                onClose={() => setShowCalc(false)}
+              />
+            )}
           </div>
         </div>
       )}
 
-      {/* ── Filters ── */}
-      <div className="transaction-filters">
-        {['all', 'income', 'expense'].map(f => (
-          <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
-            {f === 'all' ? 'All' : f === 'income' ? 'Income' : 'Expenses'}
-          </button>
-        ))}
+      {/* ── Filters row ── */}
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
+
+        {/* Type filter */}
+        <div className="transaction-filters" style={{ margin: 0 }}>
+          {['all', 'income', 'expense'].map(f => (
+            <button key={f} className={typeFilter === f ? 'active' : ''} onClick={() => setTypeFilter(f)}>
+              {f === 'all' ? 'All' : f === 'income' ? 'Income' : 'Expenses'}
+            </button>
+          ))}
+        </div>
+
+        {/* Month filter */}
+        {availableMonths.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, whiteSpace: 'nowrap' }}>📅 Month:</span>
+            <button
+              onClick={() => setMonthFilter('all')}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '99px',
+                border: `1px solid ${monthFilter === 'all' ? '#6366f1' : '#e2e8f0'}`,
+                background: monthFilter === 'all' ? '#6366f1' : '#f8fafc',
+                color: monthFilter === 'all' ? '#fff' : '#475569',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >All</button>
+            {availableMonths.map(m => (
+              <button
+                key={m}
+                onClick={() => setMonthFilter(m)}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '99px',
+                  border: `1px solid ${monthFilter === m ? '#6366f1' : '#e2e8f0'}`,
+                  background: monthFilter === m ? '#6366f1' : '#f8fafc',
+                  color: monthFilter === m ? '#fff' : '#475569',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s',
+                }}
+              >{m}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Count label */}
+      <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
+        {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''}
+        {monthFilter !== 'all' ? ` in ${monthFilter}` : ''}
+        {typeFilter !== 'all' ? ` · ${typeFilter}` : ''}
       </div>
 
       {/* ── List ── */}
       <div className="transaction-list">
         {filteredTransactions.length > 0 ? filteredTransactions.map(t => (
           <div key={t.id} className={`transaction-item ${t.type}`}>
-
             <div className="transaction-info" style={{ cursor: 'pointer' }}
               onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}>
               <div className="transaction-main">
@@ -392,7 +450,11 @@ const Transaction = ({
           </div>
         )) : (
           <div className="empty-state">
-            <p>No transactions found. Add your first transaction!</p>
+            <p>
+              {monthFilter !== 'all'
+                ? `No ${typeFilter === 'all' ? '' : typeFilter + ' '}transactions in ${monthFilter}.`
+                : 'No transactions found. Add your first transaction!'}
+            </p>
           </div>
         )}
       </div>
