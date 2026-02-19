@@ -3,6 +3,7 @@ import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
 import Budget from './pages/Budget'
 import Transaction from './pages/Transaction'
+import Calendar from './pages/Calendar'
 import './App.css'
 
 function App() {
@@ -38,7 +39,7 @@ function App() {
     const newTransaction = {
       ...transaction,
       id: Date.now(),
-      date: new Date().toISOString()
+      date: new Date(transaction.date + 'T00:00:00').toISOString()  // use the date the user picked
     }
     setTransactions([...transactions, newTransaction])
   }
@@ -67,6 +68,7 @@ function App() {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard transactions={transactions} budgets={budgets} />
+
       case 'budget':
         return (
           <Budget 
@@ -85,7 +87,11 @@ function App() {
             onDeleteTransaction={deleteTransaction}
           />
         )
+
+      case 'calendar':
+        return <Calendar transactions={transactions} />
       default:
+
         return <Dashboard transactions={transactions} budgets={budgets} />
     }
   }

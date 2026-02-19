@@ -4,7 +4,8 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'transaction', label: 'Transactions', icon: '💰' },
-    { id: 'budget', label: 'Budget', icon: '🎯' }
+    { id: 'budget', label: 'Budget', icon: '🎯' },
+    { id: 'calendar', label: 'Calendar', icon: '📅' }
   ]
 
   return (
