@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatMoney } from '../utils/formatMoney'
 
 const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBudget }) => {
   const [showForm, setShowForm] = useState(false)
@@ -54,7 +55,7 @@ const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBu
     <div className="budget">
       <div className="budget-header">
         <h1>Budget Management</h1>
-        <button 
+        <button
           className="btn btn-primary"
           onClick={() => setShowForm(true)}
         >
@@ -71,7 +72,7 @@ const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBu
                 <label>Category</label>
                 <select
                   value={formData.category}
-                  onChange={e => setFormData({...formData, category: e.target.value})}
+                  onChange={e => setFormData({ ...formData, category: e.target.value })}
                   required
                 >
                   <option value="">Select Category</option>
@@ -87,7 +88,7 @@ const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBu
                   type="number"
                   step="0.01"
                   value={formData.amount}
-                  onChange={e => setFormData({...formData, amount: e.target.value})}
+                  onChange={e => setFormData({ ...formData, amount: e.target.value })}
                   required
                 />
               </div>
@@ -96,7 +97,7 @@ const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBu
                 <label>Period</label>
                 <select
                   value={formData.period}
-                  onChange={e => setFormData({...formData, period: e.target.value})}
+                  onChange={e => setFormData({ ...formData, period: e.target.value })}
                 >
                   <option value="weekly">Weekly</option>
                   <option value="monthly">Monthly</option>
@@ -134,7 +135,7 @@ const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBu
                   <h3>{budget.category}</h3>
                   <div className="budget-actions">
                     <button onClick={() => handleEdit(budget)}>Edit</button>
-                    <button 
+                    <button
                       onClick={() => onDeleteBudget(budget.id)}
                       className="delete-btn"
                     >
@@ -142,29 +143,29 @@ const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBu
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="budget-amounts">
                   <div className="amount-row">
                     <span>Budget:</span>
-                    <span>${budget.amount.toFixed(2)}</span>
+                    <span>${formatMoney(budget.amount)}</span>
                   </div>
                   <div className="amount-row">
                     <span>Spent:</span>
                     <span className={spent > budget.amount ? 'over-budget' : ''}>
-                      ${spent.toFixed(2)}
+                      ${formatMoney(spent)}
                     </span>
                   </div>
                   <div className="amount-row">
                     <span>Remaining:</span>
                     <span className={remaining < 0 ? 'over-budget' : 'remaining'}>
-                      ${remaining.toFixed(2)}
+                      ${formatMoney(remaining)}
                     </span>
                   </div>
                 </div>
 
                 <div className="progress-container">
                   <div className="progress-bar">
-                    <div 
+                    <div
                       className={`progress-fill ${percentage > 100 ? 'over-budget' : ''}`}
                       style={{ width: `${Math.min(percentage, 100)}%` }}
                     ></div>
@@ -176,7 +177,7 @@ const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBu
                   <span className="period-badge">{budget.period}</span>
                   {percentage > 100 && (
                     <span className="over-budget-warning">
-                      Over budget by ${(spent - budget.amount).toFixed(2)}
+                      Over budget by ${formatMoney(spent - budget.amount)}
                     </span>
                   )}
                 </div>

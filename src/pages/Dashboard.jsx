@@ -1,28 +1,29 @@
 import { useMemo } from 'react'
+import { formatMoney } from '../utils/formatMoney'
 
 const Dashboard = ({ transactions, budgets }) => {
   const stats = useMemo(() => {
     const totalIncome = transactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0)
-    
+
     const totalExpenses = transactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0)
-    
+
     const balance = totalIncome - totalExpenses
-    
+
     return { totalIncome, totalExpenses, balance }
   }, [transactions])
 
   const categoryExpenses = useMemo(() => {
     const expenses = transactions.filter(t => t.type === 'expense')
     const categoryTotals = {}
-    
+
     expenses.forEach(expense => {
       categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + parseFloat(expense.amount)
     })
-    
+
     return Object.entries(categoryTotals).map(([category, amount]) => ({
       category,
       amount,
@@ -37,21 +38,21 @@ const Dashboard = ({ transactions, budgets }) => {
   return (
     <div className="dashboard">
       <h1>Dashboard</h1>
-      
+
       <div className="stats-grid">
         <div className="stat-card income">
           <h3>Total Income</h3>
-          <p className="amount">${stats.totalIncome.toFixed(2)}</p>
+          <p className="amount">${formatMoney(stats.totalIncome)}</p>
         </div>
-        
+
         <div className="stat-card expense">
           <h3>Total Expenses</h3>
-          <p className="amount">${stats.totalExpenses.toFixed(2)}</p>
+          <p className="amount">${formatMoney(stats.totalExpenses)}</p>
         </div>
-        
+
         <div className={`stat-card balance ${stats.balance >= 0 ? 'positive' : 'negative'}`}>
           <h3>Balance</h3>
-          <p className="amount">${stats.balance.toFixed(2)}</p>
+          <p className="amount">${formatMoney(stats.balance)}</p>
         </div>
       </div>
 
@@ -65,18 +66,18 @@ const Dashboard = ({ transactions, budgets }) => {
                   <div className="budget-header">
                     <span className="category">{category}</span>
                     <span className="amounts">
-                      ${amount.toFixed(2)} / ${budget.toFixed(2)}
+                      ${formatMoney(amount)} / ${formatMoney(budget)}
                     </span>
                   </div>
                   <div className="progress-bar">
-                    <div 
+                    <div
                       className={`progress-fill ${amount > budget ? 'over-budget' : ''}`}
                       style={{ width: `${Math.min((amount / budget) * 100, 100)}%` }}
                     ></div>
                   </div>
                   <div className="budget-status">
                     {amount > budget && (
-                      <span className="over-budget-text">Over budget by ${(amount - budget).toFixed(2)}</span>
+                      <span className="over-budget-text">Over budget by ${formatMoney(amount - budget)}</span>
                     )}
                   </div>
                 </div>
@@ -98,7 +99,7 @@ const Dashboard = ({ transactions, budgets }) => {
                     <span className="category">{transaction.category}</span>
                   </div>
                   <span className={`amount ${transaction.type}`}>
-                    {transaction.type === 'income' ? '+' : '-'}${transaction.amount}
+                    {transaction.type === 'income' ? '+' : '-'}${formatMoney(transaction.amount)}
                   </span>
                 </div>
               ))}
