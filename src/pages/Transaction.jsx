@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatMoney } from '../utils/formatMoney'
 
 const PRESET_CATEGORIES = [
   'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
@@ -148,15 +149,17 @@ const Transaction = ({
       <div className="transaction-summary">
         <div className="summary-card income">
           <h3>Total Income</h3>
-          <p>${totalIncome.toFixed(2)}</p>
+          <p>${formatMoney(totalIncome)}</p>
         </div>
         <div className="summary-card expense">
           <h3>Total Expenses</h3>
-          <p>${totalExpenses.toFixed(2)}</p>
+          <p>${formatMoney(totalExpenses)}</p>
         </div>
         <div className={`summary-card balance ${totalIncome - totalExpenses >= 0 ? 'positive' : 'negative'}`}>
           <h3>Net Balance</h3>
-          <p>${(totalIncome - totalExpenses).toFixed(2)}</p>
+          <p>${formatMoney(totalIncome - totalExpenses)}</p>
+
+
         </div>
       </div>
 
@@ -367,7 +370,7 @@ const Transaction = ({
 
             <div className="transaction-amount">
               <span className={`amount ${t.type}`}>
-                {t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
+                {t.type === 'income' ? '+' : '-'}${formatMoney(t.amount)}
               </span>
               <div className="transaction-btns">
                 <button className="edit-btn" onClick={() => openEditForm(t)}>Edit</button>

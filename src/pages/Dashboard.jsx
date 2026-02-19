@@ -9,6 +9,7 @@ import {
   Legend,
 } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
+import { formatMoney } from '../utils/formatMoney'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -163,7 +164,7 @@ const Dashboard = ({ transactions, budgets }) => {
 
         <div className={`stat-card balance ${stats.balance >= 0 ? 'positive' : 'negative'}`}>
           <h3>Balance</h3>
-          <p className="amount">${stats.balance.toFixed(2)}</p>
+          <p className="amount">${formatMoney(stats.balance)}</p>
         </div>
       </div>
 
