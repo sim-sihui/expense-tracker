@@ -36,46 +36,106 @@ const emptyForm = {
   cashbackBnpl: 'None',
 }
 
-const Transaction = ({ transactions, onAddTransaction, onDeleteTransaction }) => {
+const Transaction = ({
+  transactions,
+  onAddTransaction,
+  onUpdateTransaction,
+  onDeleteTransaction,
+  customCategories = [],
+  onAddCustomCategory,
+}) => {
   const [showForm, setShowForm] = useState(false)
   const [formMode, setFormMode] = useState('simple')   // 'simple' | 'detailed'
   const [formData, setFormData] = useState(emptyForm)
   const [filter, setFilter] = useState('all')
   const [expandedId, setExpandedId] = useState(null)
+  const [editingId, setEditingId] = useState(null) // null = adding, id = editing
 
-  const isDetailed       = formMode === 'detailed'
+  // Merge preset + custom categories (deduplicated)
+  const allCategories = [...PRESET_CATEGORIES]
+  customCategories.forEach(c => {
+    if (!allCategories.includes(c)) allCategories.push(c)
+  })
+
+  const isDetailed = formMode === 'detailed'
   const isCustomCategory = formData.category === '__custom__'
-  const isCustomAccount  = formData.account  === '__custom__'
+  const isCustomAccount = formData.account === '__custom__'
 
   const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }))
 
   const handleSubmit = (e) => {
     e.preventDefault()
     const finalCategory = isCustomCategory ? formData.customCategory : formData.category
-    const finalAccount  = isCustomAccount  ? formData.customAccount  : formData.account
+    const finalAccount = isCustomAccount ? formData.customAccount : formData.account
     if (!formData.amount || !finalCategory || !formData.description || !formData.date) return
 
-    onAddTransaction({
+    // If the user typed a custom category, persist it
+    if (isCustomCategory && formData.customCategory.trim()) {
+      onAddCustomCategory(formData.customCategory.trim())
+    }
+
+    const payload = {
       ...formData,
       category: finalCategory,
-      account:  finalAccount,
-      amount:   parseFloat(formData.amount),
-    })
+      account: finalAccount,
+      amount: parseFloat(formData.amount),
+    }
+
+    if (editingId !== null) {
+      onUpdateTransaction(editingId, payload)
+    } else {
+      onAddTransaction(payload)
+    }
 
     setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
+    setEditingId(null)
     setShowForm(false)
   }
 
   const openForm = () => {
+    setEditingId(null)
     setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
     setShowForm(true)
+  }
+
+  const openEditForm = (t) => {
+    // Check if the category is in the allCategories list; if not, it's a custom one already saved
+    const categoryInList = allCategories.includes(t.category)
+    setEditingId(t.id)
+    setFormData({
+      type: t.type || 'expense',
+      amount: String(t.amount),
+      category: categoryInList ? t.category : '__custom__',
+      customCategory: categoryInList ? '' : t.category,
+      description: t.description || '',
+      date: t.date ? new Date(t.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      event: t.event || '',
+      account: ACCOUNTS.includes(t.account) ? (t.account || '') : (t.account ? '__custom__' : ''),
+      customAccount: ACCOUNTS.includes(t.account) ? '' : (t.account || ''),
+      paymentType: t.paymentType || '',
+      needWant: t.needWant || 'need',
+      cashbackBnpl: t.cashbackBnpl || 'None',
+    })
+    // auto-switch to detailed if the transaction has detailed fields
+    if (t.event || t.account || t.paymentType || (t.cashbackBnpl && t.cashbackBnpl !== 'None')) {
+      setFormMode('detailed')
+    } else {
+      setFormMode('simple')
+    }
+    setShowForm(true)
+  }
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
   }
 
   const filteredTransactions = transactions
     .filter(t => filter === 'all' || t.type === filter)
     .sort((a, b) => new Date(b.date) - new Date(a.date))
 
-  const totalIncome   = transactions.filter(t => t.type === 'income') .reduce((s, t) => s + t.amount, 0)
+  const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
 
   return (
@@ -102,15 +162,15 @@ const Transaction = ({ transactions, onAddTransaction, onDeleteTransaction }) =>
 
       {/* ── Modal ─────────────────────────────────────────────────────── */}
       {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+        <div className="modal-overlay" onClick={closeForm}>
           <div
             className={`modal-content ${isDetailed ? 'modal-wide' : 'modal-narrow'}`}
             onClick={e => e.stopPropagation()}
           >
             {/* Header + close */}
             <div className="modal-header">
-              <h2>Add New Transaction</h2>
-              <button className="modal-close" onClick={() => setShowForm(false)}>✕</button>
+              <h2>{editingId !== null ? 'Edit Transaction' : 'Add New Transaction'}</h2>
+              <button className="modal-close" onClick={closeForm}>✕</button>
             </div>
 
             {/* ── Simple / Detailed toggle ── */}
@@ -162,7 +222,7 @@ const Transaction = ({ transactions, onAddTransaction, onDeleteTransaction }) =>
                   <select value={formData.category}
                     onChange={e => set('category', e.target.value)} required>
                     <option value="">Select category</option>
-                    {PRESET_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                     <option value="__custom__">＋ Add my own…</option>
                   </select>
                 </div>
@@ -262,8 +322,10 @@ const Transaction = ({ transactions, onAddTransaction, onDeleteTransaction }) =>
               )}
 
               <div className="form-actions">
-                <button type="button" onClick={() => setShowForm(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Add Transaction</button>
+                <button type="button" onClick={closeForm}>Cancel</button>
+                <button type="submit" className="btn btn-primary">
+                  {editingId !== null ? 'Save Changes' : 'Add Transaction'}
+                </button>
               </div>
             </form>
           </div>
@@ -307,15 +369,18 @@ const Transaction = ({ transactions, onAddTransaction, onDeleteTransaction }) =>
               <span className={`amount ${t.type}`}>
                 {t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
               </span>
-              <button className="delete-btn" onClick={() => onDeleteTransaction(t.id)}>Delete</button>
+              <div className="transaction-btns">
+                <button className="edit-btn" onClick={() => openEditForm(t)}>Edit</button>
+                <button className="delete-btn" onClick={() => onDeleteTransaction(t.id)}>Delete</button>
+              </div>
             </div>
 
             {expandedId === t.id && (
               <div className="transaction-detail">
-                {t.account      && <div className="detail-chip">💳 {t.account}</div>}
-                {t.paymentType  && <div className="detail-chip">📲 {t.paymentType}</div>}
+                {t.account && <div className="detail-chip">💳 {t.account}</div>}
+                {t.paymentType && <div className="detail-chip">📲 {t.paymentType}</div>}
                 {t.cashbackBnpl && t.cashbackBnpl !== 'None' && <div className="detail-chip">🎁 {t.cashbackBnpl}</div>}
-                {t.event        && <div className="detail-chip">🗓️ {t.event}</div>}
+                {t.event && <div className="detail-chip">🗓️ {t.event}</div>}
                 {!t.account && !t.paymentType && !t.event && !(t.cashbackBnpl && t.cashbackBnpl !== 'None') && (
                   <span className="detail-empty">No extra details recorded.</span>
                 )}

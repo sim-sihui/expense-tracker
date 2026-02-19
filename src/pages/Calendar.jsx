@@ -1,28 +1,38 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import './Calendar.css'
 
 const MONTHS = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December'
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ]
-const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-const EVENT_COLORS = ['#7c3aed','#db2777','#ea580c','#16a34a','#0284c7','#ca8a04']
+const EVENT_COLORS = ['#7c3aed', '#db2777', '#ea580c', '#16a34a', '#0284c7', '#ca8a04']
 
 function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate() }
-function getFirstDay(y, m)    { return new Date(y, m, 1).getDay() }
-function toKey(y, m, d)       { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` }
-function isoToKey(iso)        { const d = new Date(iso); return isNaN(d) ? null : toKey(d.getFullYear(), d.getMonth(), d.getDate()) }
+function getFirstDay(y, m) { return new Date(y, m, 1).getDay() }
+function toKey(y, m, d) { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` }
+function isoToKey(iso) { const d = new Date(iso); return isNaN(d) ? null : toKey(d.getFullYear(), d.getMonth(), d.getDate()) }
 
-const emptyEvent = { title: '', time: '', color: EVENT_COLORS[0], note: '' }
+const emptyEvent = { title: '', time: '', location: '', color: EVENT_COLORS[0], note: '' }
 
 export default function Calendar({ transactions = [] }) {
   const today = new Date()
   const [cur, setCur] = useState({ year: today.getFullYear(), month: today.getMonth() })
-  const [selected, setSelected] = useState(null)      // day number
-  const [events, setEvents] = useState({})            // { "YYYY-MM-DD": [{title,time,color,note}] }
+  const [selected, setSelected] = useState(null)
+
+  // Persist events in localStorage
+  const [events, setEvents] = useState(() => {
+    const saved = localStorage.getItem('calendarEvents')
+    return saved ? JSON.parse(saved) : {}
+  })
+  useEffect(() => {
+    localStorage.setItem('calendarEvents', JSON.stringify(events))
+  }, [events])
+
   const [showEventForm, setShowEventForm] = useState(false)
   const [eventForm, setEventForm] = useState(emptyEvent)
+  const [editingEventIndex, setEditingEventIndex] = useState(null) // null = adding, number = editing
 
   const { year, month } = cur
 
@@ -48,11 +58,11 @@ export default function Calendar({ transactions = [] }) {
   }, [selectedKey, transactions])
 
   function prevMonth() {
-    setCur(c => c.month === 0 ? { year: c.year-1, month: 11 } : { ...c, month: c.month-1 })
+    setCur(c => c.month === 0 ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 })
     setSelected(null)
   }
   function nextMonth() {
-    setCur(c => c.month === 11 ? { year: c.year+1, month: 0 } : { ...c, month: c.month+1 })
+    setCur(c => c.month === 11 ? { year: c.year + 1, month: 0 } : { ...c, month: c.month + 1 })
     setSelected(null)
   }
   function goToday() {
@@ -60,13 +70,41 @@ export default function Calendar({ transactions = [] }) {
     setSelected(today.getDate())
   }
 
-  function addEvent() {
-    if (!eventForm.title.trim() || !selectedKey) return
-    setEvents(prev => ({
-      ...prev,
-      [selectedKey]: [...(prev[selectedKey] || []), { ...eventForm }]
-    }))
+  function openAddForm() {
+    setEditingEventIndex(null)
     setEventForm(emptyEvent)
+    setShowEventForm(true)
+  }
+
+  function openEditForm(idx) {
+    const ev = selectedEvents[idx]
+    setEditingEventIndex(idx)
+    setEventForm({ ...ev })
+    setShowEventForm(true)
+  }
+
+  function saveEvent() {
+    if (!eventForm.title.trim() || !selectedKey) return
+
+    setEvents(prev => {
+      const list = [...(prev[selectedKey] || [])]
+      if (editingEventIndex !== null) {
+        // Update existing event
+        list[editingEventIndex] = { ...eventForm }
+      } else {
+        // Add new event
+        list.push({ ...eventForm })
+      }
+      return { ...prev, [selectedKey]: list }
+    })
+    setEventForm(emptyEvent)
+    setEditingEventIndex(null)
+    setShowEventForm(false)
+  }
+
+  function cancelForm() {
+    setEventForm(emptyEvent)
+    setEditingEventIndex(null)
     setShowEventForm(false)
   }
 
@@ -74,23 +112,29 @@ export default function Calendar({ transactions = [] }) {
     setEvents(prev => {
       const updated = [...(prev[key] || [])]
       updated.splice(idx, 1)
+      // If we were editing this event, close the form
+      if (editingEventIndex === idx) {
+        setEditingEventIndex(null)
+        setShowEventForm(false)
+        setEventForm(emptyEvent)
+      }
       return { ...prev, [key]: updated }
     })
   }
 
   const daysInMonth = getDaysInMonth(year, month)
-  const firstDay    = getFirstDay(year, month)
+  const firstDay = getFirstDay(year, month)
 
   const cells = []
   for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} className="cal-cell cal-empty" />)
 
   for (let day = 1; day <= daysInMonth; day++) {
-    const key        = toKey(year, month, day)
-    const expense    = expenseMap[key] || 0
-    const alpha      = expense ? Math.min(expense / maxExpense, 1) : 0
-    const dayEvents  = events[key] || []
-    const isToday    = day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
-    const isSel      = selected === day
+    const key = toKey(year, month, day)
+    const expense = expenseMap[key] || 0
+    const alpha = expense ? Math.min(expense / maxExpense, 1) : 0
+    const dayEvents = events[key] || []
+    const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+    const isSel = selected === day
 
     cells.push(
       <div key={day}
@@ -103,7 +147,7 @@ export default function Calendar({ transactions = [] }) {
         {/* Event dots */}
         {dayEvents.length > 0 && (
           <div className="cal-event-dots">
-            {dayEvents.slice(0,3).map((ev, i) => (
+            {dayEvents.slice(0, 3).map((ev, i) => (
               <span key={i} className="cal-event-dot" style={{ background: ev.color }} />
             ))}
             {dayEvents.length > 3 && <span className="cal-event-more">+{dayEvents.length - 3}</span>}
@@ -137,7 +181,7 @@ export default function Calendar({ transactions = [] }) {
         <div className="cal-legend">
           <span>Spending:</span>
           <div className="cal-legend-bar">
-            {[0.15,0.35,0.55,0.75,1].map(v => (
+            {[0.15, 0.35, 0.55, 0.75, 1].map(v => (
               <div key={v} className="cal-legend-swatch" style={{ '--heat': v }} />
             ))}
           </div>
@@ -159,14 +203,17 @@ export default function Calendar({ transactions = [] }) {
         <div className="cal-detail">
           <div className="cal-detail-header">
             <h3>{MONTHS[month]} {selected}, {year}</h3>
-            <button className="btn btn-primary btn-sm" onClick={() => setShowEventForm(v => !v)}>
+            <button className="btn btn-primary btn-sm" onClick={openAddForm}>
               + Add Event
             </button>
           </div>
 
-          {/* Add event form */}
+          {/* Add / Edit event form */}
           {showEventForm && (
             <div className="cal-event-form">
+              <div className="cal-event-form-title">
+                {editingEventIndex !== null ? '✏️ Edit Event' : '➕ New Event'}
+              </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Event Title</label>
@@ -182,10 +229,10 @@ export default function Calendar({ transactions = [] }) {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Note <span className="label-optional">(optional)</span></label>
-                  <input type="text" placeholder="Any additional notes"
-                    value={eventForm.note}
-                    onChange={e => setEventForm(f => ({ ...f, note: e.target.value }))} />
+                  <label>Location <span className="label-optional">(optional)</span></label>
+                  <input type="text" placeholder="e.g. Orchard Road, Singapore"
+                    value={eventForm.location}
+                    onChange={e => setEventForm(f => ({ ...f, location: e.target.value }))} />
                 </div>
                 <div className="form-group">
                   <label>Colour</label>
@@ -199,9 +246,19 @@ export default function Calendar({ transactions = [] }) {
                   </div>
                 </div>
               </div>
+              <div className="form-row">
+                <div className="form-group form-group-full">
+                  <label>Note <span className="label-optional">(optional)</span></label>
+                  <input type="text" placeholder="Any additional notes"
+                    value={eventForm.note}
+                    onChange={e => setEventForm(f => ({ ...f, note: e.target.value }))} />
+                </div>
+              </div>
               <div className="form-actions">
-                <button type="button" onClick={() => setShowEventForm(false)}>Cancel</button>
-                <button type="button" className="btn btn-primary" onClick={addEvent}>Save Event</button>
+                <button type="button" onClick={cancelForm}>Cancel</button>
+                <button type="button" className="btn btn-primary" onClick={saveEvent}>
+                  {editingEventIndex !== null ? 'Update Event' : 'Save Event'}
+                </button>
               </div>
             </div>
           )}
@@ -212,13 +269,19 @@ export default function Calendar({ transactions = [] }) {
               <h4>🗓️ Events</h4>
               <div className="cal-events-list">
                 {selectedEvents.map((ev, i) => (
-                  <div key={i} className="cal-event-item" style={{ borderLeftColor: ev.color }}>
-                    <div className="cal-event-main">
+                  <div key={i}
+                    className={`cal-event-item${editingEventIndex === i ? ' cal-event-editing' : ''}`}
+                    style={{ borderLeftColor: ev.color }}>
+                    <div className="cal-event-main" onClick={() => openEditForm(i)} style={{ cursor: 'pointer' }}>
                       <strong>{ev.title}</strong>
                       {ev.time && <span className="cal-event-time">🕐 {ev.time}</span>}
+                      {ev.location && <span className="cal-event-location">📍 {ev.location}</span>}
                       {ev.note && <span className="cal-event-note">{ev.note}</span>}
                     </div>
-                    <button className="delete-btn" onClick={() => deleteEvent(selectedKey, i)}>✕</button>
+                    <div className="cal-event-actions">
+                      <button className="edit-btn" onClick={() => openEditForm(i)} title="Edit">✏️</button>
+                      <button className="delete-btn" onClick={() => deleteEvent(selectedKey, i)}>✕</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -248,7 +311,7 @@ export default function Calendar({ transactions = [] }) {
                           </span>
                         )}
                         {t.account && <span className="tag">💳 {t.account}</span>}
-                        {t.event   && <span className="tag">📅 {t.event}</span>}
+                        {t.event && <span className="tag">📅 {t.event}</span>}
                       </div>
                     </div>
                     <span className={`cal-detail-amt ${t.type}`}>

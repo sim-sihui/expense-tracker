@@ -8,32 +8,33 @@ import './App.css'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
-  const [transactions, setTransactions] = useState([])
-  const [budgets, setBudgets] = useState([])
+  const [transactions, setTransactions] = useState(() => {
+    const saved = localStorage.getItem('transactions')
+    return saved ? JSON.parse(saved) : []
+  })
+  const [budgets, setBudgets] = useState(() => {
+    const saved = localStorage.getItem('budgets')
+    return saved ? JSON.parse(saved) : []
+  })
+  const [customCategories, setCustomCategories] = useState(() => {
+    const saved = localStorage.getItem('customCategories')
+    return saved ? JSON.parse(saved) : []
+  })
 
-  // Load data from localStorage on component mount
-  useEffect(() => {
-    const savedTransactions = localStorage.getItem('transactions')
-    const savedBudgets = localStorage.getItem('budgets')
-    
-    if (savedTransactions) {
-      setTransactions(JSON.parse(savedTransactions))
-    }
-    
-    if (savedBudgets) {
-      setBudgets(JSON.parse(savedBudgets))
-    }
-  }, [])
-
-  // Save transactions to localStorage whenever transactions change
+  // Save transactions to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('transactions', JSON.stringify(transactions))
   }, [transactions])
 
-  // Save budgets to localStorage whenever budgets change
+  // Save budgets to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('budgets', JSON.stringify(budgets))
   }, [budgets])
+
+  // Save custom categories to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('customCategories', JSON.stringify(customCategories))
+  }, [customCategories])
 
   const addTransaction = (transaction) => {
     const newTransaction = {
@@ -44,8 +45,22 @@ function App() {
     setTransactions([...transactions, newTransaction])
   }
 
+  const updateTransaction = (id, updatedData) => {
+    setTransactions(transactions.map(t =>
+      t.id === id
+        ? { ...updatedData, id, date: new Date(updatedData.date + 'T00:00:00').toISOString() }
+        : t
+    ))
+  }
+
   const deleteTransaction = (id) => {
     setTransactions(transactions.filter(t => t.id !== id))
+  }
+
+  const addCustomCategory = (name) => {
+    if (name && !customCategories.includes(name)) {
+      setCustomCategories([...customCategories, name])
+    }
   }
 
   const addBudget = (budget) => {
@@ -71,7 +86,7 @@ function App() {
 
       case 'budget':
         return (
-          <Budget 
+          <Budget
             budgets={budgets}
             transactions={transactions}
             onAddBudget={addBudget}
@@ -81,10 +96,13 @@ function App() {
         )
       case 'transaction':
         return (
-          <Transaction 
+          <Transaction
             transactions={transactions}
             onAddTransaction={addTransaction}
+            onUpdateTransaction={updateTransaction}
             onDeleteTransaction={deleteTransaction}
+            customCategories={customCategories}
+            onAddCustomCategory={addCustomCategory}
           />
         )
 
