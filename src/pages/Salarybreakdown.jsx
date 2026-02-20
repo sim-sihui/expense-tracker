@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { formatMoney } from '../utils/formatMoney'
 
 const DEFAULT_SPLIT = { needs: 50, wants: 30, savings: 10, invest: 10 }
 
 const BUDGETS = [
-  { key: 'needs',   label: 'Needs',   icon: '🛒', color: '#4ade80', desc: 'Rent, groceries, transport' },
-  { key: 'wants',   label: 'Wants',   icon: '🛍️', color: '#fb923c', desc: 'Dining, shopping, entertainment' },
-  { key: 'savings', label: 'Savings', icon: '🏦', color: '#60a5fa', desc: 'Emergency fund, goals' },
-  { key: 'invest',  label: 'Invest',  icon: '📈', color: '#c084fc', desc: 'Stocks, CPF top-up, REITs' },
+  { key: 'needs',   label: 'Needs',   icon: '🛒', color: '#22c55e', rgb: '34,197,94',   desc: 'Rent, groceries, transport' },
+  { key: 'wants',   label: 'Wants',   icon: '🛍️', color: '#f97316', rgb: '249,115,22',  desc: 'Dining, shopping, entertainment' },
+  { key: 'savings', label: 'Savings', icon: '🏦', color: '#3b82f6', rgb: '59,130,246',  desc: 'Emergency fund, goals' },
+  { key: 'invest',  label: 'Invest',  icon: '📈', color: '#a855f7', rgb: '168,85,247',  desc: 'Stocks, CPF top-up, REITs' },
 ]
 
 const SalaryBreakdown = ({ totalIncome }) => {
@@ -16,15 +16,23 @@ const SalaryBreakdown = ({ totalIncome }) => {
     catch { return DEFAULT_SPLIT }
   })
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(split)
+  const [draft, setDraft] = useState({ ...DEFAULT_SPLIT })
 
   const total = draft.needs + draft.wants + draft.savings + draft.invest
   const isValid = total === 100
 
+  const openEditor = () => {
+    setDraft({ ...split }) // always sync draft from latest saved split
+    setEditing(true)
+  }
+
+  const cancelEditor = () => setEditing(false)
+
   const save = () => {
     if (!isValid) return
-    setSplit(draft)
-    localStorage.setItem('salarySplit', JSON.stringify(draft))
+    const saved = { ...draft }
+    setSplit(saved)
+    localStorage.setItem('salarySplit', JSON.stringify(saved))
     setEditing(false)
   }
 
@@ -37,14 +45,14 @@ const SalaryBreakdown = ({ totalIncome }) => {
 
   return (
     <div style={{
-      background: '#fff',
-      border: '1px solid #e2e8f0',
+      background: 'var(--color-surface)',
+      border: '1px solid var(--color-border)',
       borderRadius: '16px',
       padding: '1.25rem 1.5rem',
       marginBottom: '1.5rem',
     }}>
-      {/* Header row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: editing ? '1rem' : '1.25rem' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
         <div>
           <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>
             💰 Income Allocation
@@ -53,32 +61,26 @@ const SalaryBreakdown = ({ totalIncome }) => {
             Based on ${formatMoney(totalIncome)} total income
           </div>
         </div>
-        <button
-          onClick={() => { setDraft(split); setEditing(!editing) }}
-          style={{
-            background: editing ? '#fef2f2' : '#f8fafc',
-            border: `1px solid ${editing ? '#fca5a5' : '#e2e8f0'}`,
-            color: editing ? '#dc2626' : '#475569',
-            borderRadius: '8px',
-            padding: '6px 12px',
-            fontSize: '0.75rem',
-            cursor: 'pointer',
-            fontWeight: 500,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {editing ? '✕ Cancel' : '⚙️ Customise'}
-        </button>
+        {!editing ? (
+          <button onClick={openEditor} style={{
+            background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)',
+            borderRadius: '8px', padding: '6px 12px', fontSize: '0.75rem',
+            cursor: 'pointer', fontWeight: 500,
+          }}>⚙️ Customise</button>
+        ) : (
+          <button onClick={cancelEditor} style={{
+            background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626',
+            borderRadius: '8px', padding: '6px 12px', fontSize: '0.75rem',
+            cursor: 'pointer', fontWeight: 500,
+          }}>✕ Cancel</button>
+        )}
       </div>
 
       {/* Editor */}
       {editing && (
         <div style={{
-          background: '#f8fafc',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '1rem',
-          marginBottom: '1.25rem',
+          background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)',
+          borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem',
         }}>
           <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 0.75rem' }}>
             Percentages must add up to 100%
@@ -94,39 +96,33 @@ const SalaryBreakdown = ({ totalIncome }) => {
                     type="number" min="0" max="100"
                     value={draft[b.key]}
                     onChange={e => setField(b.key, e.target.value)}
-                    style={{
-                      width: '52px', padding: '6px 8px', border: '1px solid #e2e8f0',
-                      borderRadius: '6px', fontSize: '0.9rem', fontWeight: 600,
-                    }}
+                    style={{ width: '52px', padding: '6px 8px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '0.9rem', fontWeight: 600 }}
                   />
                   <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>%</span>
                 </div>
               </div>
             ))}
           </div>
+          {/* Total bar */}
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             background: isValid ? '#dcfce7' : '#fef2f2',
             color: isValid ? '#166534' : '#991b1b',
             borderRadius: '8px', padding: '8px 12px',
             fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.75rem',
           }}>
-            <span>Total: {total}% {isValid ? '✓ Good to go!' : `— need ${Math.abs(100 - total)}% ${total < 100 ? 'more' : 'less'}`}</span>
+            Total: {total}% {isValid ? '✓ Good to go!' : `— ${total < 100 ? `need ${100 - total}% more` : `${total - 100}% too much`}`}
           </div>
-          <button
-            onClick={save} disabled={!isValid}
-            style={{
-              background: isValid ? '#6366f1' : '#e2e8f0',
-              color: isValid ? '#fff' : '#94a3b8',
-              border: 'none', borderRadius: '8px',
-              padding: '8px 20px', fontSize: '0.82rem', fontWeight: 700,
-              cursor: isValid ? 'pointer' : 'not-allowed',
-            }}
-          >Save Split</button>
+          <button onClick={save} disabled={!isValid} style={{
+            background: isValid ? 'var(--color-primary)' : 'var(--color-border)',
+            color: isValid ? '#fff' : 'var(--color-text-muted)',
+            border: 'none', borderRadius: '8px',
+            padding: '8px 20px', fontSize: '0.82rem', fontWeight: 700,
+            cursor: isValid ? 'pointer' : 'not-allowed',
+          }}>Save Split</button>
         </div>
       )}
 
-      {/* Cards */}
+      {/* Cards — reads from `split` (saved state), not draft */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem' }}>
         {BUDGETS.map(b => {
           const amount = (totalIncome * split[b.key]) / 100
@@ -135,37 +131,33 @@ const SalaryBreakdown = ({ totalIncome }) => {
             <div key={b.key} style={{
               borderRadius: '12px',
               padding: '1rem',
-              background: `linear-gradient(135deg, ${b.color}10 0%, transparent 100%)`,
-              border: `1px solid ${b.color}30`,
-              position: 'relative',
-              overflow: 'hidden',
+              // Use rgba() with rgb values — works in all browsers
+              background: `linear-gradient(135deg, rgba(${b.rgb},0.08) 0%, transparent 100%)`,
+              border: `1px solid rgba(${b.rgb},0.25)`,
             }}>
-              {/* Icon + pct badge */}
+              {/* Icon + badge */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <span style={{ fontSize: '1.3rem' }}>{b.icon}</span>
                 <span style={{
                   fontSize: '0.68rem', fontWeight: 800, color: b.color,
-                  background: `${b.color}20`, padding: '2px 7px', borderRadius: '99px',
+                  background: `rgba(${b.rgb},0.12)`,
+                  padding: '2px 7px', borderRadius: '99px',
                 }}>{pct}%</span>
               </div>
-
               {/* Amount */}
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: '1px' }}>
                 ${formatMoney(amount)}
               </div>
-
               {/* Label */}
               <div style={{ fontSize: '0.72rem', fontWeight: 700, color: b.color, marginBottom: '2px' }}>
                 {b.label}
               </div>
-
               {/* Desc */}
               <div style={{ fontSize: '0.62rem', color: '#94a3b8', lineHeight: 1.4, marginBottom: '0.6rem' }}>
                 {b.desc}
               </div>
-
-              {/* Bar */}
-              <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '99px', overflow: 'hidden' }}>
+              {/* Progress bar */}
+              <div style={{ height: '4px', background: 'var(--color-border)', borderRadius: '99px', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${pct}%`, background: b.color, borderRadius: '99px', transition: 'width 0.5s ease' }} />
               </div>
             </div>

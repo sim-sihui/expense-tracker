@@ -5,6 +5,9 @@ import Budget from './pages/Budget'
 import Transaction from './pages/Transaction'
 import Calendar from './pages/Calendar'
 import './App.css'
+import './theme.css'
+import { ThemeProvider } from './context/ThemeContext'
+import ThemeSwitcher from './components/ThemeSwitcher'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
@@ -21,17 +24,14 @@ function App() {
     return saved ? JSON.parse(saved) : []
   })
 
-  // Save transactions to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('transactions', JSON.stringify(transactions))
   }, [transactions])
 
-  // Save budgets to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('budgets', JSON.stringify(budgets))
   }, [budgets])
 
-  // Save custom categories to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('customCategories', JSON.stringify(customCategories))
   }, [customCategories])
@@ -40,7 +40,7 @@ function App() {
     const newTransaction = {
       ...transaction,
       id: Date.now(),
-      date: new Date(transaction.date + 'T00:00:00').toISOString()  // use the date the user picked
+      date: new Date(transaction.date + 'T00:00:00').toISOString()
     }
     setTransactions([...transactions, newTransaction])
   }
@@ -64,10 +64,7 @@ function App() {
   }
 
   const addBudget = (budget) => {
-    const newBudget = {
-      ...budget,
-      id: Date.now()
-    }
+    const newBudget = { ...budget, id: Date.now() }
     setBudgets([...budgets, newBudget])
   }
 
@@ -83,7 +80,6 @@ function App() {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard transactions={transactions} budgets={budgets} />
-
       case 'budget':
         return (
           <Budget
@@ -105,22 +101,23 @@ function App() {
             onAddCustomCategory={addCustomCategory}
           />
         )
-
       case 'calendar':
         return <Calendar transactions={transactions} />
       default:
-
         return <Dashboard transactions={transactions} budgets={budgets} />
     }
   }
 
   return (
-    <div className="App">
-      <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      <main className="main-content">
-        {renderPage()}
-      </main>
-    </div>
+    <ThemeProvider>
+      <ThemeSwitcher />
+      <div className="App">
+        <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        <main className="main-content">
+          {renderPage()}
+        </main>
+      </div>
+    </ThemeProvider>
   )
 }
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import './Calendar.css'
 
 const MONTHS = [
@@ -9,20 +9,38 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const EVENT_COLORS = ['#7c3aed', '#db2777', '#ea580c', '#16a34a', '#0284c7', '#ca8a04']
 
-// Purple heat colour as RGB components — applied inline so CSS vars aren't needed inside rgba()
-const HEAT_R = 124, HEAT_G = 58, HEAT_B = 237
+// Reads accent colour + dark mode from CSS variables
+function getHeatRGB() {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-primary-rgb').trim()
+  if (!raw) return { r: 124, g: 58, b: 237 }
+  const [r, g, b] = raw.split(',').map(Number)
+  return { r, g, b }
+}
+
+function isDarkMode() {
+  return document.documentElement.getAttribute('data-theme') === 'dark'
+}
 
 function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate() }
-function getFirstDay(y, m)    { return new Date(y, m, 1).getDay() }
-function toKey(y, m, d)       { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` }
-function isoToKey(iso)        { const d = new Date(iso); return isNaN(d) ? null : toKey(d.getFullYear(), d.getMonth(), d.getDate()) }
+function getFirstDay(y, m) { return new Date(y, m, 1).getDay() }
+function toKey(y, m, d) { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` }
+function isoToKey(iso) { const d = new Date(iso); return isNaN(d) ? null : toKey(d.getFullYear(), d.getMonth(), d.getDate()) }
 
 const emptyEvent = { title: '', time: '', location: '', color: EVENT_COLORS[0], note: '' }
 
 export default function Calendar({ transactions = [] }) {
   const today = new Date()
-  const [cur, setCur]         = useState({ year: today.getFullYear(), month: today.getMonth() })
+  const [cur, setCur] = useState({ year: today.getFullYear(), month: today.getMonth() })
   const [selected, setSelected] = useState(null)
+
+  // Forces re-render when accent colour or dark mode changes
+  const [themeKey, setThemeKey] = useState(0)
+  useEffect(() => {
+    const observer = new MutationObserver(() => setThemeKey(k => k + 1))
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-accent'] })
+    return () => observer.disconnect()
+  }, [])
 
   const [events, setEvents] = useState(() => {
     try { const s = localStorage.getItem('calendarEvents'); return s ? JSON.parse(s) : {} }
@@ -32,8 +50,8 @@ export default function Calendar({ transactions = [] }) {
     localStorage.setItem('calendarEvents', JSON.stringify(events))
   }, [events])
 
-  const [showEventForm, setShowEventForm]         = useState(false)
-  const [eventForm, setEventForm]                 = useState(emptyEvent)
+  const [showEventForm, setShowEventForm] = useState(false)
+  const [eventForm, setEventForm] = useState(emptyEvent)
   const [editingEventIndex, setEditingEventIndex] = useState(null)
 
   const { year, month } = cur
@@ -52,20 +70,20 @@ export default function Calendar({ transactions = [] }) {
 
   const maxExpense = Math.max(...Object.values(expenseMap), 1)
 
-  const selectedKey          = selected ? toKey(year, month, selected) : null
-  const selectedEvents       = selectedKey ? (events[selectedKey] || []) : []
+  const selectedKey = selected ? toKey(year, month, selected) : null
+  const selectedEvents = selectedKey ? (events[selectedKey] || []) : []
   const selectedTransactions = useMemo(() => {
     if (!selectedKey) return []
     return transactions.filter(t => isoToKey(t.date) === selectedKey)
   }, [selectedKey, transactions])
 
-  function prevMonth() { setCur(c => c.month === 0  ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 }); setSelected(null) }
-  function nextMonth() { setCur(c => c.month === 11 ? { year: c.year + 1, month: 0  } : { ...c, month: c.month + 1 }); setSelected(null) }
-  function goToday()   { setCur({ year: today.getFullYear(), month: today.getMonth() }); setSelected(today.getDate()) }
+  function prevMonth() { setCur(c => c.month === 0 ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 }); setSelected(null) }
+  function nextMonth() { setCur(c => c.month === 11 ? { year: c.year + 1, month: 0 } : { ...c, month: c.month + 1 }); setSelected(null) }
+  function goToday() { setCur({ year: today.getFullYear(), month: today.getMonth() }); setSelected(today.getDate()) }
 
-  function openAddForm()  { setEditingEventIndex(null); setEventForm(emptyEvent); setShowEventForm(true) }
+  function openAddForm() { setEditingEventIndex(null); setEventForm(emptyEvent); setShowEventForm(true) }
   function openEditForm(idx) { setEditingEventIndex(idx); setEventForm({ ...selectedEvents[idx] }); setShowEventForm(true) }
-  function cancelForm()   { setEventForm(emptyEvent); setEditingEventIndex(null); setShowEventForm(false) }
+  function cancelForm() { setEventForm(emptyEvent); setEditingEventIndex(null); setShowEventForm(false) }
 
   function saveEvent() {
     if (!eventForm.title.trim() || !selectedKey) return
@@ -87,29 +105,32 @@ export default function Calendar({ transactions = [] }) {
   }
 
   const daysInMonth = getDaysInMonth(year, month)
-  const firstDay    = getFirstDay(year, month)
+  const firstDay = getFirstDay(year, month)
 
   const cells = []
   for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} className="cal-cell cal-empty" />)
 
   for (let day = 1; day <= daysInMonth; day++) {
-    const key      = toKey(year, month, day)
-    const expense  = expenseMap[key] || 0
+    const key = toKey(year, month, day)
+    const expense = expenseMap[key] || 0
     // Logarithmic scale so $1 vs $432 look visually distinct.
     // log(1+expense) / log(1+max) maps small values to ~0.15+ and large to 1.
     const alpha = expense
       ? Math.min(Math.log1p(expense) / Math.log1p(maxExpense), 1)
       : 0
     const dayEvents = events[key] || []
-    const isToday  = day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
-    const isSel    = selected === day
+    const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+    const isSel = selected === day
 
-    // Apply heat background directly via inline style background
-    // Use a stronger alpha range (0.12 → 0.55) so heat is clearly visible
-    const heatAlpha = expense > 0 ? (0.12 + alpha * 0.43).toFixed(3) : 0
+    const { r, g, b } = getHeatRGB()
+    const dark = isDarkMode()
+    const baseAlpha = dark ? 0.25 : 0.12
+    const rangeAlpha = dark ? 0.60 : 0.43
+    const heatAlpha = expense > 0 ? (baseAlpha + alpha * rangeAlpha).toFixed(3) : 0
     const cellBg = expense > 0
-      ? `rgba(${HEAT_R}, ${HEAT_G}, ${HEAT_B}, ${heatAlpha})`
-      : '#f9fafb'
+      ? `rgba(${r}, ${g}, ${b}, ${heatAlpha})`
+      : 'var(--color-surface-alt)'
+
 
     cells.push(
       <div
@@ -117,7 +138,7 @@ export default function Calendar({ transactions = [] }) {
         className={`cal-cell${isToday ? ' cal-today' : ''}${isSel ? ' cal-selected' : ''}`}
         style={{
           background: cellBg,
-          ...(isSel && expense > 0 ? { outline: '3px solid #7c3aed', outlineOffset: '-2px' } : {})
+          ...(isSel && expense > 0 ? { outline: '3px solid var(--color-primary)', outlineOffset: '-2px' } : {})
         }}
         onClick={() => setSelected(isSel ? null : day)}
       >
@@ -157,16 +178,22 @@ export default function Calendar({ transactions = [] }) {
           <button className="cal-today-btn" onClick={goToday}>Today</button>
         </div>
 
+        {/* Legend — swatches use inline background so they're always visible */}
         <div className="cal-legend">
           <span>Spending:</span>
           <div className="cal-legend-bar">
-            {[0.12, 0.23, 0.34, 0.44, 0.55].map(v => (
-              <div
-                key={v}
-                className="cal-legend-swatch"
-                style={{ background: `rgba(${HEAT_R}, ${HEAT_G}, ${HEAT_B}, ${v})` }}
-              />
-            ))}
+            {[0.12, 0.23, 0.34, 0.44, 0.55].map(v => {
+              const { r, g, b } = getHeatRGB()
+              const dark = isDarkMode()
+              const adjusted = dark ? Math.min(v + 0.25, 0.85) : v
+              return (
+                <div
+                  key={v}
+                  className="cal-legend-swatch"
+                  style={{ background: `rgba(${r}, ${g}, ${b}, ${adjusted})` }}
+                />
+              )
+            })}
           </div>
           <span>Less → More</span>
           <span style={{ marginLeft: '1rem' }}>● Events</span>
@@ -253,9 +280,9 @@ export default function Calendar({ transactions = [] }) {
                     style={{ borderLeftColor: ev.color }}>
                     <div className="cal-event-main" onClick={() => openEditForm(i)} style={{ cursor: 'pointer' }}>
                       <strong>{ev.title}</strong>
-                      {ev.time     && <span className="cal-event-time">🕐 {ev.time}</span>}
+                      {ev.time && <span className="cal-event-time">🕐 {ev.time}</span>}
                       {ev.location && <span className="cal-event-location">📍 {ev.location}</span>}
-                      {ev.note     && <span className="cal-event-note">{ev.note}</span>}
+                      {ev.note && <span className="cal-event-note">{ev.note}</span>}
                     </div>
                     <div className="cal-event-actions">
                       <button className="edit-btn" onClick={() => openEditForm(i)} title="Edit">✏️</button>
@@ -289,7 +316,7 @@ export default function Calendar({ transactions = [] }) {
                           </span>
                         )}
                         {t.account && <span className="tag">💳 {t.account}</span>}
-                        {t.event   && <span className="tag">📅 {t.event}</span>}
+                        {t.event && <span className="tag">📅 {t.event}</span>}
                       </div>
                     </div>
                     <span className={`cal-detail-amt ${t.type}`}>

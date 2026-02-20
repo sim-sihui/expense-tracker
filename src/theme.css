@@ -1,0 +1,490 @@
+/* ═══════════════════════════════════════════════════════════
+   THEME.CSS — Global variables & glassmorphism
+═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Core Colours - Vibrant Light Mode */
+  --nav-from: #4f46e5;
+  --nav-to: #7c3aed;
+
+  --color-primary: #6366f1;
+  --color-primary-light: #e0e7ff;
+  --color-primary-dark: #4338ca;
+  --color-primary-rgb: 99, 102, 241;
+  --color-primary-hover: #4f46e5;
+  --color-focus: rgba(99, 102, 241, 0.25);
+
+  --color-bg: #f8fafc;
+  --color-surface: rgba(255, 255, 255, 0.7);
+  --color-surface-solid: #ffffff;
+  --color-surface-alt: rgba(255, 255, 255, 0.4);
+  --color-border: rgba(255, 255, 255, 0.5);
+
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+
+  --color-shadow: rgba(15, 23, 42, 0.04);
+  --color-overlay: rgba(15, 23, 42, 0.25);
+
+  --color-input-bg: rgba(255, 255, 255, 0.9);
+  --color-input-border: rgba(99, 102, 241, 0.2);
+
+  --color-income-bg: rgba(22, 163, 74, 0.08);
+  --color-expense-bg: rgba(220, 38, 38, 0.08);
+
+  /* Glassmorphism Variables */
+  --glass-blur: blur(16px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
+
+  /* Typography */
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+[data-theme="dark"] {
+  /* Core Colours - Deep Space Dark Mode */
+  --nav-from: #6366f1;
+  --nav-to: #a855f7;
+
+  --color-primary-light: rgba(99, 102, 241, 0.25);
+
+  --color-bg: #0f172a;
+  --color-surface: rgba(30, 41, 59, 0.65);
+  --color-surface-solid: #1e293b;
+  --color-surface-alt: rgba(30, 41, 59, 0.35);
+  --color-border: rgba(148, 163, 184, 0.1);
+
+  --color-text: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #64748b;
+
+  --color-shadow: rgba(0, 0, 0, 0.3);
+  --color-overlay: rgba(0, 0, 0, 0.6);
+
+  --color-input-bg: rgba(15, 23, 42, 0.6);
+  --color-input-border: rgba(99, 102, 241, 0.3);
+
+  --color-income-bg: rgba(34, 197, 94, 0.1);
+  --color-expense-bg: rgba(239, 68, 68, 0.1);
+
+  /* Glassmorphism Variables */
+  --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Smooth transitions ── */
+*,
+*::before,
+*::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease,
+    color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* ══════════════════════════════════════════
+   GLOBAL BASE & TYPOGRAPHY
+══════════════════════════════════════════ */
+html,
+body,
+#root {
+  background: var(--color-bg) !important;
+  color: var(--color-text) !important;
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.brand-text {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+/* Vibrant Radial gradient background */
+body {
+  background:
+    radial-gradient(ellipse 60% 60% at 20% 10%, rgba(99, 102, 241, 0.15) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 60% at 80% 90%, rgba(168, 85, 247, 0.15) 0%, transparent 100%),
+    var(--color-bg) !important;
+  background-attachment: fixed !important;
+}
+
+[data-theme="dark"] body {
+  background:
+    radial-gradient(ellipse 60% 60% at 20% 10%, rgba(99, 102, 241, 0.2) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 60% at 80% 90%, rgba(168, 85, 247, 0.15) 0%, transparent 100%),
+    var(--color-bg) !important;
+  background-attachment: fixed !important;
+}
+
+.App {
+  background: transparent !important;
+  min-height: 100vh;
+}
+
+.main-content {
+  background: transparent !important;
+}
+
+/* ══════════════════════════════════════════
+   GLASSMORPHISM UTILITY & SURFACES
+══════════════════════════════════════════ */
+.glass-panel,
+.summary-card,
+.modal-content,
+.cal-detail,
+.calendar-container,
+.cal-event-form,
+.cal-event-item,
+.cal-detail-item,
+.transaction-item,
+.budget-card,
+.card,
+.stat-card,
+.budget-overview,
+.recent-transactions,
+.transaction-list,
+.chart-section {
+  background: var(--color-surface) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border) !important;
+  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
+  color: var(--color-text) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Subtle hover pop on cards */
+.hover-pop:hover,
+.stat-card:hover,
+.budget-card:hover,
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="dark"] .stat-card:hover,
+[data-theme="dark"] .budget-card:hover,
+[data-theme="dark"] .summary-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.transaction,
+.budget-page,
+.dashboard,
+.calendar-page,
+[class*="-page"] {
+  background: transparent !important;
+  color: var(--color-text) !important;
+}
+
+/* ══════════════════════════════════════════
+   INPUTS
+══════════════════════════════════════════ */
+input,
+select,
+textarea {
+  background: var(--color-input-bg) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-input-border) !important;
+  backdrop-filter: blur(4px);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-body);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px var(--color-focus) !important;
+  background: var(--color-surface-solid) !important;
+}
+
+/* ══════════════════════════════════════════
+   PRIMARY BUTTON
+══════════════════════════════════════════ */
+.btn-primary,
+button.btn-primary {
+  background: linear-gradient(135deg, var(--nav-from) 0%, var(--nav-to) 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.3);
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-primary:hover::after {
+  opacity: 1;
+}
+
+/* ══════════════════════════════════════════
+   FILTERS / ACTIVE STATES
+══════════════════════════════════════════ */
+.transaction-filters button.active {
+  background: var(--color-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.mode-btn.mode-active {
+  color: var(--color-primary) !important;
+}
+
+/* Month filter pills */
+.month-pill-active {
+  background: var(--color-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+}
+
+/* ══════════════════════════════════════════
+   TAGS
+══════════════════════════════════════════ */
+.tag-category {
+  background: var(--color-primary-light) !important;
+  color: var(--color-primary) !important;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+[data-theme="dark"] .tag-category {
+  background: rgba(99, 102, 241, 0.2) !important;
+  color: #818cf8 !important;
+}
+
+/* ══════════════════════════════════════════
+   CALENDAR
+══════════════════════════════════════════ */
+.cal-today .cal-day-num {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.4);
+}
+
+.cal-cell.cal-today,
+.cal-cell.cal-selected,
+.cal-cell:hover {
+  border-color: var(--color-primary) !important;
+}
+
+.cal-cell.cal-selected {
+  background: var(--color-primary-light) !important;
+}
+
+.cal-today-btn {
+  background: var(--color-primary-light) !important;
+  color: var(--color-primary) !important;
+}
+
+.cal-event-editing {
+  background: var(--color-primary-light) !important;
+}
+
+/* ══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+.modal-overlay {
+  background: var(--color-overlay) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ══════════════════════════════════════════
+   SUMMARY CARD TINTS
+══════════════════════════════════════════ */
+.summary-card.income {
+  background: var(--color-income-bg) !important;
+}
+
+.summary-card.expense {
+  background: var(--color-expense-bg) !important;
+}
+
+/* ══════════════════════════════════════════
+   DARK MODE OVERRIDES
+══════════════════════════════════════════ */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] label {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] p,
+[data-theme="dark"] span {
+  color: inherit;
+}
+
+/* Dark mode — calendar */
+[data-theme="dark"] .calendar-container,
+[data-theme="dark"] .cal-detail {
+  background: var(--color-surface) !important;
+}
+
+[data-theme="dark"] .cal-cell {
+  background: var(--color-surface-alt);
+}
+
+[data-theme="dark"] .cal-cell.cal-empty {
+  background: transparent !important;
+}
+
+[data-theme="dark"] .cal-day-num {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .cal-weekday {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] .cal-legend {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] .cal-month-title {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .calendar-header h1 {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .calendar-subtitle {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="dark"] .cal-nav-btn {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .cal-event-form {
+  background: var(--color-surface-alt) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .cal-event-item {
+  background: var(--color-surface-alt) !important;
+}
+
+[data-theme="dark"] .cal-event-main strong {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .cal-detail-item {
+  background: var(--color-surface-alt) !important;
+  border: var(--glass-border) !important;
+}
+
+[data-theme="dark"] .cal-detail-desc {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .cal-section h4 {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] .cal-detail-header h3 {
+  color: var(--color-text) !important;
+}
+
+/* Dark mode — forms */
+[data-theme="dark"] .form-section-title {
+  color: var(--color-text-muted) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .form-group label {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="dark"] .label-optional {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] .modal-header h2 {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .modal-close {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="dark"] .mode-toggle {
+  background: var(--color-surface-alt) !important;
+}
+
+[data-theme="dark"] .mode-btn {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="dark"] .mode-btn.mode-active {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .toggle-btn {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .toggle-btn.active-need {
+  background: rgba(5, 46, 22, 0.5) !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .toggle-btn.active-want {
+  background: rgba(28, 10, 10, 0.5) !important;
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.2) !important;
+}
+
+/* Dark mode — misc */
+[data-theme="dark"] .detail-chip,
+[data-theme="dark"] .tag {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .empty-state {
+  color: var(--color-text-muted) !important;
+}

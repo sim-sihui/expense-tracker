@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { formatMoney } from '../utils/formatMoney'
 import Calculator from './Calculator'
-import SalaryBreakdown from './SalaryBreakdown'
+import SalaryBreakdown from './Salarybreakdown'
 
 const PRESET_CATEGORIES = [
   'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
@@ -84,7 +84,7 @@ const Transaction = ({
 
   // Summary based on currently filtered month (or all)
   const summaryBase = monthFilter === 'all' ? transactions : transactions.filter(t => toMonthKey(t.date) === monthFilter)
-  const totalIncome   = summaryBase.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  const totalIncome = summaryBase.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
   const totalExpenses = summaryBase.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
   // Always use all income for the salary breakdown
   const allTimeIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
@@ -93,7 +93,7 @@ const Transaction = ({
   const handleSubmit = (e) => {
     e.preventDefault()
     const finalCategory = isCustomCategory ? formData.customCategory : formData.category
-    const finalAccount  = isCustomAccount  ? formData.customAccount  : formData.account
+    const finalAccount = isCustomAccount ? formData.customAccount : formData.account
     if (!formData.amount || !finalCategory || !formData.description || !formData.date) return
 
     if (isCustomCategory && formData.customCategory.trim()) {
@@ -169,12 +169,11 @@ const Transaction = ({
       {showForm && (
         <div className="modal-overlay" onClick={closeForm} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div
+            className="glass-panel"
             style={{
               display: 'flex',
               alignItems: 'stretch',
-              borderRadius: '16px',
               overflow: 'hidden',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
               maxHeight: '90vh',
               width: showCalc ? '680px' : '460px',
               maxWidth: '95vw',
@@ -182,7 +181,7 @@ const Transaction = ({
             onClick={e => e.stopPropagation()}
           >
             {/* Form panel */}
-            <div style={{ background: '#fff', flex: 1, minWidth: 0, overflowY: 'auto', padding: '1.5rem' }}>
+            <div style={{ background: 'transparent', flex: 1, minWidth: 0, overflowY: 'auto', padding: '1.5rem' }}>
               <div className="modal-header">
                 <h2>{editingId !== null ? 'Edit Transaction' : 'Add New Transaction'}</h2>
                 <button className="modal-close" onClick={closeForm}>✕</button>
@@ -227,9 +226,10 @@ const Transaction = ({
                         onClick={() => setShowCalc(p => !p)}
                         style={{
                           height: '38px', padding: '0 10px',
-                          border: `1px solid ${showCalc ? '#6366f1' : '#e2e8f0'}`,
+                          border: `1px solid ${showCalc ? 'var(--color-primary)' : 'var(--color-input-border)'}`,
                           borderRadius: '8px',
-                          background: showCalc ? '#6366f1' : '#f8fafc',
+                          background: showCalc ? 'var(--color-primary)' : 'var(--color-input-bg)',
+                          color: showCalc ? '#fff' : 'inherit',
                           fontSize: '1rem', cursor: 'pointer', flexShrink: 0,
                         }}
                       >🧮</button>
@@ -359,15 +359,15 @@ const Transaction = ({
         {/* Month filter */}
         {availableMonths.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, whiteSpace: 'nowrap' }}>📅 Month:</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>📅 Month:</span>
             <button
               onClick={() => setMonthFilter('all')}
               style={{
                 padding: '5px 12px',
                 borderRadius: '99px',
-                border: `1px solid ${monthFilter === 'all' ? '#6366f1' : '#e2e8f0'}`,
-                background: monthFilter === 'all' ? '#6366f1' : '#f8fafc',
-                color: monthFilter === 'all' ? '#fff' : '#475569',
+                border: `1px solid ${monthFilter === 'all' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                background: monthFilter === 'all' ? 'var(--color-primary)' : 'var(--color-surface-alt)',
+                color: monthFilter === 'all' ? '#fff' : 'var(--color-text)',
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -381,9 +381,9 @@ const Transaction = ({
                 style={{
                   padding: '5px 12px',
                   borderRadius: '99px',
-                  border: `1px solid ${monthFilter === m ? '#6366f1' : '#e2e8f0'}`,
-                  background: monthFilter === m ? '#6366f1' : '#f8fafc',
-                  color: monthFilter === m ? '#fff' : '#475569',
+                  border: `1px solid ${monthFilter === m ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                  background: monthFilter === m ? 'var(--color-primary)' : 'var(--color-surface-alt)',
+                  color: monthFilter === m ? '#fff' : 'var(--color-text)',
                   fontSize: '0.75rem',
                   fontWeight: 600,
                   cursor: 'pointer',

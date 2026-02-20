@@ -84,8 +84,8 @@ const Dashboard = ({ transactions, budgets }) => {
       {
         label: 'Income',
         data: monthlyData.incomes,
-        backgroundColor: 'rgba(72, 187, 120, 0.7)',
-        borderColor: '#48bb78',
+        backgroundColor: 'rgba(34, 197, 94, 0.7)',
+        borderColor: '#22c55e',
         borderWidth: 1,
         borderRadius: 6,
         borderSkipped: false,
@@ -93,8 +93,8 @@ const Dashboard = ({ transactions, budgets }) => {
       {
         label: 'Expenses',
         data: monthlyData.expenses,
-        backgroundColor: 'rgba(245, 101, 101, 0.7)',
-        borderColor: '#f56565',
+        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+        borderColor: '#ef4444',
         borderWidth: 1,
         borderRadius: 6,
         borderSkipped: false,
@@ -112,13 +112,14 @@ const Dashboard = ({ transactions, budgets }) => {
           usePointStyle: true,
           pointStyle: 'circle',
           padding: 20,
-          font: { size: 13, weight: '600' },
+          font: { size: 13, weight: '600', family: 'Inter' },
+          color: '#94a3b8',
         },
       },
       tooltip: {
-        backgroundColor: '#1a1a2e',
-        titleFont: { size: 13 },
-        bodyFont: { size: 12 },
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        titleFont: { size: 13, family: 'Inter' },
+        bodyFont: { size: 12, family: 'Inter' },
         padding: 12,
         cornerRadius: 8,
         callbacks: {
@@ -129,16 +130,16 @@ const Dashboard = ({ transactions, budgets }) => {
     scales: {
       y: {
         beginAtZero: true,
-        grid: { color: 'rgba(0,0,0,0.04)' },
+        grid: { color: 'rgba(150, 150, 150, 0.1)' },
         ticks: {
           callback: (v) => `$${v}`,
-          font: { size: 11 },
-          color: '#718096',
+          font: { size: 11, family: 'Inter' },
+          color: '#94a3b8',
         },
       },
       x: {
         grid: { display: false },
-        ticks: { font: { size: 12, weight: '500' }, color: '#4a5568' },
+        ticks: { font: { size: 12, weight: '500', family: 'Inter' }, color: '#94a3b8' },
       },
     },
   }
