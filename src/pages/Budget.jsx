@@ -134,7 +134,7 @@ const Budget = ({ budgets, transactions, onAddBudget, onUpdateBudget, onDeleteBu
                 <div className="budget-card-header">
                   <h3>{budget.category}</h3>
                   <div className="budget-actions">
-                    <button onClick={() => handleEdit(budget)}>Edit</button>
+                    <button onClick={() => handleEdit(budget)} className="edit-btn">Edit</button>
                     <button
                       onClick={() => onDeleteBudget(budget.id)}
                       className="delete-btn"

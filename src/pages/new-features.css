@@ -10,6 +10,7 @@
 
 .amount-input-row input {
   flex: 1;
+  min-width: 0;
 }
 
 .calc-toggle-btn {

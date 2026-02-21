@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { formatMoney } from '../utils/formatMoney'
 import Calculator from './Calculator'
 import SalaryBreakdown from './Salarybreakdown'
+import './new-features.css'
 
 const PRESET_CATEGORIES = [
   'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
@@ -213,25 +214,18 @@ const Transaction = ({
                 <div className="form-row">
                   <div className="form-group">
                     <label>Amount ($)</label>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <div className="amount-input-row">
                       <input
                         type="number" step="0.01" min="0" placeholder="0.00"
                         value={formData.amount}
                         onChange={e => set('amount', e.target.value)}
-                        required style={{ flex: 1 }}
+                        required
                       />
                       <button
                         type="button"
-                        title="Open calculator (or type with keyboard)"
+                        title="Open calculator"
                         onClick={() => setShowCalc(p => !p)}
-                        style={{
-                          height: '38px', padding: '0 10px',
-                          border: `1px solid ${showCalc ? 'var(--color-primary)' : 'var(--color-input-border)'}`,
-                          borderRadius: '8px',
-                          background: showCalc ? 'var(--color-primary)' : 'var(--color-input-bg)',
-                          color: showCalc ? '#fff' : 'inherit',
-                          fontSize: '1rem', cursor: 'pointer', flexShrink: 0,
-                        }}
+                        className={`calc-toggle-btn${showCalc ? ' calc-toggle-active' : ''}`}
                       >🧮</button>
                     </div>
                   </div>

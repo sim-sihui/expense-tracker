@@ -4,10 +4,10 @@ import { formatMoney } from '../utils/formatMoney'
 const DEFAULT_SPLIT = { needs: 50, wants: 30, savings: 10, invest: 10 }
 
 const BUDGETS = [
-  { key: 'needs',   label: 'Needs',   icon: '🛒', color: '#22c55e', rgb: '34,197,94',   desc: 'Rent, groceries, transport' },
-  { key: 'wants',   label: 'Wants',   icon: '🛍️', color: '#f97316', rgb: '249,115,22',  desc: 'Dining, shopping, entertainment' },
-  { key: 'savings', label: 'Savings', icon: '🏦', color: '#3b82f6', rgb: '59,130,246',  desc: 'Emergency fund, goals' },
-  { key: 'invest',  label: 'Invest',  icon: '📈', color: '#a855f7', rgb: '168,85,247',  desc: 'Stocks, CPF top-up, REITs' },
+  { key: 'needs', label: 'Needs', icon: '🛒', color: '#22c55e', rgb: '34,197,94', desc: 'Rent, groceries, transport' },
+  { key: 'wants', label: 'Wants', icon: '🛍️', color: '#f97316', rgb: '249,115,22', desc: 'Dining, shopping, entertainment' },
+  { key: 'savings', label: 'Savings', icon: '🏦', color: '#3b82f6', rgb: '59,130,246', desc: 'Emergency fund, goals' },
+  { key: 'invest', label: 'Invest', icon: '📈', color: '#a855f7', rgb: '168,85,247', desc: 'Stocks, CPF top-up, REITs' },
 ]
 
 const SalaryBreakdown = ({ totalIncome }) => {
@@ -54,25 +54,17 @@ const SalaryBreakdown = ({ totalIncome }) => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
         <div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '2px' }}>
             💰 Income Allocation
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
             Based on ${formatMoney(totalIncome)} total income
           </div>
         </div>
         {!editing ? (
-          <button onClick={openEditor} style={{
-            background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)',
-            borderRadius: '8px', padding: '6px 12px', fontSize: '0.75rem',
-            cursor: 'pointer', fontWeight: 500,
-          }}>⚙️ Customise</button>
+          <button onClick={openEditor} className="edit-btn">⚙️ Customise</button>
         ) : (
-          <button onClick={cancelEditor} style={{
-            background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626',
-            borderRadius: '8px', padding: '6px 12px', fontSize: '0.75rem',
-            cursor: 'pointer', fontWeight: 500,
-          }}>✕ Cancel</button>
+          <button onClick={cancelEditor} className="delete-btn">✕ Cancel</button>
         )}
       </div>
 
@@ -82,7 +74,7 @@ const SalaryBreakdown = ({ totalIncome }) => {
           background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)',
           borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem',
         }}>
-          <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 0.75rem' }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', margin: '0 0 0.75rem' }}>
             Percentages must add up to 100%
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -98,7 +90,7 @@ const SalaryBreakdown = ({ totalIncome }) => {
                     onChange={e => setField(b.key, e.target.value)}
                     style={{ width: '52px', padding: '6px 8px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '0.9rem', fontWeight: 600 }}
                   />
-                  <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>%</span>
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>%</span>
                 </div>
               </div>
             ))}
@@ -145,7 +137,7 @@ const SalaryBreakdown = ({ totalIncome }) => {
                 }}>{pct}%</span>
               </div>
               {/* Amount */}
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: '1px' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-text)', marginBottom: '1px' }}>
                 ${formatMoney(amount)}
               </div>
               {/* Label */}
@@ -153,7 +145,7 @@ const SalaryBreakdown = ({ totalIncome }) => {
                 {b.label}
               </div>
               {/* Desc */}
-              <div style={{ fontSize: '0.62rem', color: '#94a3b8', lineHeight: 1.4, marginBottom: '0.6rem' }}>
+              <div style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', lineHeight: 1.4, marginBottom: '0.6rem' }}>
                 {b.desc}
               </div>
               {/* Progress bar */}
