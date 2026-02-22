@@ -10,12 +10,13 @@ import {
 } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
 import { formatMoney } from '../utils/formatMoney'
+import EmergencyFund from './EmergencyFund';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-const Dashboard = ({ transactions, budgets }) => {
+const Dashboard = ({ transactions, budgets, emergencyFund }) => {
   const currentYear = new Date().getFullYear()
   const [selectedYear, setSelectedYear] = useState(currentYear)
 
@@ -33,6 +34,12 @@ const Dashboard = ({ transactions, budgets }) => {
     return { totalIncome, totalExpenses, balance }
   }, [transactions])
 
+  // Calculate Emergency Fund Progress
+  const efPercent = useMemo(() => {
+    if (!emergencyFund || emergencyFund.target === 0) return 0;
+    return Math.min((emergencyFund.current / emergencyFund.target) * 100, 100);
+  }, [emergencyFund]);
+
   const categoryExpenses = useMemo(() => {
     const expenses = transactions.filter(t => t.type === 'expense')
     const categoryTotals = {}
@@ -48,10 +55,9 @@ const Dashboard = ({ transactions, budgets }) => {
     }))
   }, [transactions, budgets])
 
-  // Get all unique years from transactions
   const availableYears = useMemo(() => {
     const years = new Set()
-    years.add(currentYear) // always include current year
+    years.add(currentYear)
     transactions.forEach(t => {
       const d = new Date(t.date)
       if (!isNaN(d)) years.add(d.getFullYear())
@@ -59,7 +65,6 @@ const Dashboard = ({ transactions, budgets }) => {
     return [...years].sort((a, b) => b - a)
   }, [transactions, currentYear])
 
-  // Monthly expense + income totals for the selected year
   const monthlyData = useMemo(() => {
     const expenses = new Array(12).fill(0)
     const incomes = new Array(12).fill(0)
@@ -75,9 +80,6 @@ const Dashboard = ({ transactions, budgets }) => {
     return { expenses, incomes }
   }, [transactions, selectedYear])
 
-  const annualExpense = monthlyData.expenses.reduce((a, b) => a + b, 0)
-  const annualIncome = monthlyData.incomes.reduce((a, b) => a + b, 0)
-
   const chartData = {
     labels: MONTH_LABELS,
     datasets: [
@@ -88,7 +90,6 @@ const Dashboard = ({ transactions, budgets }) => {
         borderColor: '#22c55e',
         borderWidth: 1,
         borderRadius: 6,
-        borderSkipped: false,
       },
       {
         label: 'Expenses',
@@ -97,7 +98,6 @@ const Dashboard = ({ transactions, budgets }) => {
         borderColor: '#ef4444',
         borderWidth: 1,
         borderRadius: 6,
-        borderSkipped: false,
       },
     ],
   }
@@ -108,39 +108,12 @@ const Dashboard = ({ transactions, budgets }) => {
     plugins: {
       legend: {
         position: 'top',
-        labels: {
-          usePointStyle: true,
-          pointStyle: 'circle',
-          padding: 20,
-          font: { size: 13, weight: '600', family: 'Inter' },
-          color: '#94a3b8',
-        },
-      },
-      tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        titleFont: { size: 13, family: 'Inter' },
-        bodyFont: { size: 12, family: 'Inter' },
-        padding: 12,
-        cornerRadius: 8,
-        callbacks: {
-          label: (ctx) => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`,
-        },
+        labels: { color: '#94a3b8', font: { family: 'Inter' } },
       },
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(150, 150, 150, 0.1)' },
-        ticks: {
-          callback: (v) => `$${v}`,
-          font: { size: 11, family: 'Inter' },
-          color: '#94a3b8',
-        },
-      },
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 12, weight: '500', family: 'Inter' }, color: '#94a3b8' },
-      },
+      y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(150, 150, 150, 0.1)' } },
+      x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
     },
   }
 
@@ -150,8 +123,49 @@ const Dashboard = ({ transactions, budgets }) => {
 
   return (
     <div className="dashboard">
-      <h1>Dashboard</h1>
+      <div className="dashboard-header-flex">
+        <h1>Dashboard</h1>
+      </div>
 
+      {/* ── NEW: EMERGENCY FUND TOP SECTION ── */}
+      <div className="ef-hero-section" style={{ 
+        background: 'var(--color-bg-secondary)', 
+        padding: '20px', 
+        borderRadius: '12px', 
+        marginBottom: '24px',
+        border: '1px solid var(--color-border)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>🛡️ Emergency Fund Progress</h3>
+          <span style={{ fontWeight: '600', color: 'var(--color-primary)' }}>
+            ${formatMoney(emergencyFund?.current || 0)} / ${formatMoney(emergencyFund?.target || 0)}
+          </span>
+        </div>
+        
+        <div className="progress-bar" style={{ height: '12px', backgroundColor: 'var(--color-border)' }}>
+          <div 
+            className="progress-fill" 
+            style={{ 
+              width: `${efPercent}%`, 
+              backgroundColor: 'var(--color-primary)',
+              boxShadow: '0 0 10px rgba(var(--color-primary-rgb), 0.3)'
+            }}
+          ></div>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+            {efPercent.toFixed(1)}% of safety net reached
+          </span>
+          {efPercent < 100 && (
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+              ${formatMoney(emergencyFund.target - emergencyFund.current)} remaining
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── STATS GRID ── */}
       <div className="stats-grid">
         <div className="stat-card income">
           <h3>Total Income</h3>
@@ -169,7 +183,7 @@ const Dashboard = ({ transactions, budgets }) => {
         </div>
       </div>
 
-      {/* ── Monthly Spending Chart ── */}
+      {/* ── CHARTS AND CONTENT ── */}
       <div className="chart-section">
         <div className="chart-header">
           <h2>Monthly Overview</h2>
@@ -185,20 +199,6 @@ const Dashboard = ({ transactions, budgets }) => {
         </div>
         <div className="chart-wrapper">
           <Bar data={chartData} options={chartOptions} />
-        </div>
-        <div className="annual-totals">
-          <div className="annual-total-item income">
-            <span>Annual Income</span>
-            <strong>${annualIncome.toFixed(2)}</strong>
-          </div>
-          <div className="annual-total-item expense">
-            <span>Annual Expenses</span>
-            <strong>${annualExpense.toFixed(2)}</strong>
-          </div>
-          <div className={`annual-total-item ${annualIncome - annualExpense >= 0 ? 'positive' : 'negative'}`}>
-            <span>Net</span>
-            <strong>${(annualIncome - annualExpense).toFixed(2)}</strong>
-          </div>
         </div>
       </div>
 
@@ -221,42 +221,34 @@ const Dashboard = ({ transactions, budgets }) => {
                       style={{ width: `${Math.min((amount / budget) * 100, 100)}%` }}
                     ></div>
                   </div>
-                  <div className="budget-status">
-                    {amount > budget && (
-                      <span className="over-budget-text">Over budget by ${formatMoney(amount - budget)}</span>
-                    )}
-                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p>No expenses yet. Start adding transactions!</p>
+            <p>No expenses yet.</p>
           )}
         </div>
 
         <div className="recent-transactions">
           <h2>Recent Transactions</h2>
-          {recentTransactions.length > 0 ? (
-            <div className="transaction-list">
-              {recentTransactions.map(transaction => (
-                <div key={transaction.id} className={`transaction-item ${transaction.type}`}>
-                  <div className="transaction-info">
-                    <span className="description">{transaction.description}</span>
-                    <span className="category">{transaction.category}</span>
-                  </div>
-                  <span className={`amount ${transaction.type}`}>
-                    {transaction.type === 'income' ? '+' : '-'}${formatMoney(transaction.amount)}
-                  </span>
+          <div className="transaction-list">
+            {recentTransactions.map(transaction => (
+              <div key={transaction.id} className={`transaction-item ${transaction.type}`}>
+                <div className="transaction-info">
+                  <span className="description">{transaction.description}</span>
+                  <span className="category">{transaction.category}</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p>No transactions yet. Add your first transaction!</p>
-          )}
+                <span className={`amount ${transaction.type}`}>
+                  {transaction.type === 'income' ? '+' : '-'}${formatMoney(transaction.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   )
 }
+
 
 export default Dashboard

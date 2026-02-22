@@ -11,6 +11,7 @@ import ThemeSwitcher from './components/ThemeSwitcher'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
+  
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('transactions')
     return saved ? JSON.parse(saved) : []
@@ -23,19 +24,28 @@ function App() {
     const saved = localStorage.getItem('customCategories')
     return saved ? JSON.parse(saved) : []
   })
+  const [savingsGoals, setSavingsGoals] = useState(() => {
+    const saved = localStorage.getItem('savingsGoals')
+    return saved ? JSON.parse(saved) : []
+  })
 
-  useEffect(() => {
-    localStorage.setItem('transactions', JSON.stringify(transactions))
-  }, [transactions])
+  // UPDATED: Initialize with history array for the chart
+  const [emergencyFund, setEmergencyFund] = useState(() => {
+    const saved = localStorage.getItem('emergencyFund')
+    const defaultData = { target: 10000, current: 0, targetMonths: 6, history: [] }
+    if (!saved) return defaultData
+    const parsed = JSON.parse(saved)
+    return { ...defaultData, ...parsed } // Merge to ensure history exists
+  })
 
-  useEffect(() => {
-    localStorage.setItem('budgets', JSON.stringify(budgets))
-  }, [budgets])
+  // Persistence Effects
+  useEffect(() => { localStorage.setItem('transactions', JSON.stringify(transactions)) }, [transactions])
+  useEffect(() => { localStorage.setItem('budgets', JSON.stringify(budgets)) }, [budgets])
+  useEffect(() => { localStorage.setItem('customCategories', JSON.stringify(customCategories)) }, [customCategories])
+  useEffect(() => { localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals)) }, [savingsGoals])
+  useEffect(() => { localStorage.setItem('emergencyFund', JSON.stringify(emergencyFund)) }, [emergencyFund])
 
-  useEffect(() => {
-    localStorage.setItem('customCategories', JSON.stringify(customCategories))
-  }, [customCategories])
-
+  // --- Handlers ---
   const addTransaction = (transaction) => {
     const newTransaction = {
       ...transaction,
@@ -47,47 +57,61 @@ function App() {
 
   const updateTransaction = (id, updatedData) => {
     setTransactions(transactions.map(t =>
-      t.id === id
-        ? { ...updatedData, id, date: new Date(updatedData.date + 'T00:00:00').toISOString() }
-        : t
+      t.id === id ? { ...updatedData, id, date: new Date(updatedData.date + 'T00:00:00').toISOString() } : t
     ))
   }
 
-  const deleteTransaction = (id) => {
-    setTransactions(transactions.filter(t => t.id !== id))
-  }
+  const deleteTransaction = (id) => { setTransactions(transactions.filter(t => t.id !== id)) }
 
   const addCustomCategory = (name) => {
-    if (name && !customCategories.includes(name)) {
-      setCustomCategories([...customCategories, name])
-    }
+    if (name && !customCategories.includes(name)) { setCustomCategories([...customCategories, name]) }
   }
 
-  const addBudget = (budget) => {
-    const newBudget = { ...budget, id: Date.now() }
-    setBudgets([...budgets, newBudget])
-  }
+  const addBudget = (budget) => { setBudgets([...budgets, { ...budget, id: Date.now() }]) }
+  const updateBudget = (id, updatedBudget) => { setBudgets(budgets.map(b => b.id === id ? { ...updatedBudget, id } : b)) }
+  const deleteBudget = (id) => { setBudgets(budgets.filter(b => b.id !== id)) }
 
-  const updateBudget = (id, updatedBudget) => {
-    setBudgets(budgets.map(b => b.id === id ? { ...updatedBudget, id } : b))
-  }
+  const addSavingsGoal = (goal) => { setSavingsGoals([...savingsGoals, { ...goal, id: Date.now() }]) }
+  const updateSavingsGoal = (id, updatedGoal) => { setSavingsGoals(savingsGoals.map(g => g.id === id ? { ...updatedGoal, id } : g)) }
+  const deleteSavingsGoal = (id) => { setSavingsGoals(savingsGoals.filter(g => g.id !== id)) }
 
-  const deleteBudget = (id) => {
-    setBudgets(budgets.filter(b => b.id !== id))
+  // UPDATED: Emergency Fund Handler to capture Chart History
+  const updateEmergencyFund = (newData) => {
+    setEmergencyFund(prev => {
+      const today = new Date().toLocaleDateString('en-US', { month: 'short' });
+      
+      // Filter out existing entries for the same month to prevent chart clutter
+      const filteredHistory = (prev.history || []).filter(h => h.month !== today);
+      
+      const newHistory = [
+        ...filteredHistory,
+        { month: today, balance: newData.current }
+      ].slice(-12); // Store last 12 snapshots
+
+      return {
+        ...prev,
+        ...newData,
+        history: newHistory
+      };
+    });
   }
 
   const renderPage = () => {
+    const commonProps = { transactions, budgets, savingsGoals, emergencyFund };
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard transactions={transactions} budgets={budgets} />
+        return <Dashboard {...commonProps} />
       case 'budget':
         return (
           <Budget
-            budgets={budgets}
-            transactions={transactions}
+            {...commonProps}
             onAddBudget={addBudget}
             onUpdateBudget={updateBudget}
             onDeleteBudget={deleteBudget}
+            onAddGoal={addSavingsGoal}
+            onUpdateGoal={updateSavingsGoal}
+            onDeleteGoal={deleteSavingsGoal}
+            onUpdateEmergencyFund={updateEmergencyFund}
           />
         )
       case 'transaction':
@@ -104,7 +128,7 @@ function App() {
       case 'calendar':
         return <Calendar transactions={transactions} />
       default:
-        return <Dashboard transactions={transactions} budgets={budgets} />
+        return <Dashboard {...commonProps} />
     }
   }
 
