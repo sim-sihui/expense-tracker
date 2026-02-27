@@ -1,0 +1,526 @@
+/* ═══════════════════════════════════════════════════════════
+   CPF.CSS — Dedicated CPF Page Styles (Dark Mode Optimised)
+═══════════════════════════════════════════════════════════ */
+
+/* ── Page Container ── */
+.cpf-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ── Page Header ── */
+.cpf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.cpf-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    font-family: var(--font-heading);
+    color: var(--color-text);
+}
+
+.cpf-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.cpf-last-sync {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+}
+
+/* ── Info Banner ── */
+.cpf-info-banner {
+    background: rgba(var(--color-primary-rgb), 0.08);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.5;
+}
+
+.cpf-info-banner .info-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* ── Account Cards Grid ── */
+.cpf-accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.cpf-account-card {
+    background: var(--color-surface);
+    border: var(--glass-border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cpf-account-card:hover {
+    transform: translateY(-3px);
+}
+
+.cpf-account-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+}
+
+.cpf-account-card.oa::before {
+    background: var(--color-primary);
+}
+
+.cpf-account-card.sa::before {
+    background: #10b981;
+}
+
+.cpf-account-card.ma::before {
+    background: #f59e0b;
+}
+
+.cpf-account-label {
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+}
+
+.cpf-account-balance {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    margin-bottom: 4px;
+}
+
+.cpf-account-card.oa .cpf-account-balance {
+    color: var(--color-primary);
+}
+
+.cpf-account-card.sa .cpf-account-balance {
+    color: #10b981;
+}
+
+.cpf-account-card.ma .cpf-account-balance {
+    color: #f59e0b;
+}
+
+.cpf-account-rate {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+}
+
+.cpf-account-interest {
+    font-size: 0.78rem;
+    color: #10b981;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.cpf-account-uses {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border);
+}
+
+/* ── Two-Column Row ── */
+.cpf-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* ── Section Cards ── */
+.cpf-card {
+    background: var(--color-surface);
+    border: var(--glass-border);
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cpf-card:hover {
+    transform: translateY(-2px);
+}
+
+.cpf-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 20px;
+    font-family: var(--font-heading);
+}
+
+/* ── Inline Update Form ── */
+.cpf-update-form .cpf-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.cpf-update-form .cpf-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.cpf-form-group label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+}
+
+.cpf-form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-input-border);
+    color: var(--color-text);
+    font-family: var(--font-body);
+}
+
+.cpf-form-group input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus);
+}
+
+.cpf-update-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--nav-from), var(--nav-to));
+    color: white;
+    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+    transition: all 0.3s ease;
+}
+
+.cpf-update-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
+}
+
+/* ── Contribution Rates Table ── */
+.cpf-rates-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.cpf-rates-badge {
+    font-size: 0.72rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.cpf-rates-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.cpf-rates-table thead th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--color-border);
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cpf-rates-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+
+.cpf-rates-table tbody tr.active-tier {
+    background: rgba(var(--color-primary-rgb), 0.08);
+}
+
+.cpf-rates-table tbody tr.active-tier td:first-child {
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.cpf-rates-table .rate-total {
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+/* ── Projection Section ── */
+.cpf-projection-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--color-text);
+    font-family: var(--font-heading);
+}
+
+.cpf-projection-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.cpf-projection-label {
+    min-width: 110px;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.cpf-projection-bar-wrap {
+    flex: 1;
+    height: 14px;
+    background: rgba(var(--color-primary-rgb), 0.08);
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.cpf-projection-bar {
+    height: 100%;
+    border-radius: 7px;
+    background: linear-gradient(90deg, #d4a017, #c49000);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cpf-projection-value {
+    min-width: 90px;
+    text-align: right;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+/* ── CPF LIFE Estimate ── */
+.cpf-life-card {
+    position: relative;
+}
+
+.cpf-life-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(var(--color-primary-rgb), 0.12);
+    color: var(--color-primary);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.cpf-life-subtitle {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.cpf-life-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    color: var(--color-text);
+    margin-bottom: 20px;
+}
+
+.cpf-life-payout {
+    font-size: 2.2rem;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    color: #10b981;
+}
+
+.cpf-life-payout-unit {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+.cpf-life-note {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(var(--color-primary-rgb), 0.06);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+/* ── CPF Usage Tracker ── */
+.cpf-usage-card .cpf-card-title {
+    margin-bottom: 14px;
+}
+
+.cpf-usage-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+
+.cpf-usage-row .usage-label {
+    font-weight: 600;
+}
+
+.cpf-usage-row .usage-action {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.cpf-usage-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    border-radius: 8px;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-input-border);
+    color: var(--color-text-muted);
+    font-family: var(--font-body);
+    margin-bottom: 20px;
+}
+
+.cpf-monthly-contrib-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+}
+
+.cpf-monthly-contrib-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+.cpf-contrib-box {
+    text-align: center;
+    padding: 14px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-alt);
+}
+
+.cpf-contrib-box-label {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.cpf-contrib-box-value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--font-heading);
+}
+
+.cpf-contrib-box.oa .cpf-contrib-box-value {
+    color: var(--color-primary);
+}
+
+.cpf-contrib-box.sa .cpf-contrib-box-value {
+    color: #10b981;
+}
+
+.cpf-contrib-box.ma .cpf-contrib-box-value {
+    color: #f59e0b;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+    .cpf-accounts-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .cpf-two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .cpf-accounts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cpf-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .cpf-update-form .cpf-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cpf-update-form .cpf-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .cpf-monthly-contrib-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cpf-projection-label {
+        min-width: 80px;
+        font-size: 0.68rem;
+    }
+
+    .cpf-projection-value {
+        min-width: 70px;
+        font-size: 0.72rem;
+    }
+}

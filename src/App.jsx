@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import Budget from './pages/Budget'
 import Transaction from './pages/Transaction'
 import Calendar from './pages/Calendar'
+import CPF from './pages/cpf'
 import './App.css'
 import './theme.css'
 import { ThemeProvider } from './context/ThemeContext'
@@ -11,7 +12,7 @@ import ThemeSwitcher from './components/ThemeSwitcher'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
-  
+
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('transactions')
     return saved ? JSON.parse(saved) : []
@@ -28,6 +29,10 @@ function App() {
     const saved = localStorage.getItem('savingsGoals')
     return saved ? JSON.parse(saved) : []
   })
+  const [cpfData, setCpfData] = useState(() => {
+    const saved = localStorage.getItem('cpfData')
+    return saved ? JSON.parse(saved) : { oa: 0, sa: 0, ma: 0, salary: 0, age: 30 }
+  })
 
   // UPDATED: Initialize with history array for the chart
   const [emergencyFund, setEmergencyFund] = useState(() => {
@@ -35,7 +40,7 @@ function App() {
     const defaultData = { target: 10000, current: 0, targetMonths: 6, history: [] }
     if (!saved) return defaultData
     const parsed = JSON.parse(saved)
-    return { ...defaultData, ...parsed } // Merge to ensure history exists
+    return { ...defaultData, ...parsed }
   })
 
   // Persistence Effects
@@ -44,6 +49,7 @@ function App() {
   useEffect(() => { localStorage.setItem('customCategories', JSON.stringify(customCategories)) }, [customCategories])
   useEffect(() => { localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals)) }, [savingsGoals])
   useEffect(() => { localStorage.setItem('emergencyFund', JSON.stringify(emergencyFund)) }, [emergencyFund])
+  useEffect(() => { localStorage.setItem('cpfData', JSON.stringify(cpfData)) }, [cpfData])
 
   // --- Handlers ---
   const addTransaction = (transaction) => {
@@ -75,18 +81,17 @@ function App() {
   const updateSavingsGoal = (id, updatedGoal) => { setSavingsGoals(savingsGoals.map(g => g.id === id ? { ...updatedGoal, id } : g)) }
   const deleteSavingsGoal = (id) => { setSavingsGoals(savingsGoals.filter(g => g.id !== id)) }
 
+  const updateCPF = (newData) => { setCpfData(prev => ({ ...prev, ...newData })) }
+
   // UPDATED: Emergency Fund Handler to capture Chart History
   const updateEmergencyFund = (newData) => {
     setEmergencyFund(prev => {
       const today = new Date().toLocaleDateString('en-US', { month: 'short' });
-      
-      // Filter out existing entries for the same month to prevent chart clutter
       const filteredHistory = (prev.history || []).filter(h => h.month !== today);
-      
       const newHistory = [
         ...filteredHistory,
         { month: today, balance: newData.current }
-      ].slice(-12); // Store last 12 snapshots
+      ].slice(-12);
 
       return {
         ...prev,
@@ -127,6 +132,8 @@ function App() {
         )
       case 'calendar':
         return <Calendar transactions={transactions} />
+      case 'cpf':
+        return <CPF cpfData={cpfData} onUpdateCPF={updateCPF} />
       default:
         return <Dashboard {...commonProps} />
     }
