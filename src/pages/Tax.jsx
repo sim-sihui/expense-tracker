@@ -1,9 +1,61 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import './Tax.css';
 
-const Tax = () => {
+const Tax = ({ transactions = [], cpfData = {} }) => {
     const [grossIncome, setGrossIncome] = useState('');
     const [reliefs, setReliefs] = useState('');
+
+    const { autoGrossIncome, autoReliefs } = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+
+        const salaryTxs = transactions.filter(t => t.type === 'income' && t.category === 'Salary' && new Date(t.date).getFullYear() === currentYear);
+        const latestSalary = salaryTxs.sort((a, b) => new Date(b.date) - new Date(a.date))[0]?.amount || 0;
+
+        const totalBonus = transactions
+            .filter(t => t.type === 'income' && t.category === 'Bonus' && new Date(t.date).getFullYear() === currentYear)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const projectedIncome = (latestSalary * 12) + totalBonus;
+
+        // Compute CPF Reliefs based on MOM rules (mirrors CPF logic)
+        const owSubject = Math.min(latestSalary, 8000);
+        const awCeiling = Math.max(0, 102000 - (owSubject * 12));
+        const awSubject = Math.min(totalBonus, awCeiling);
+
+        const age = Number(cpfData.age) || 30;
+        let empRate = 0.20;
+        if (age >= 55 && age < 60) empRate = 0.15;
+        else if (age >= 60 && age < 65) empRate = 0.095;
+        else if (age >= 65 && age < 70) empRate = 0.07;
+        else if (age >= 70) empRate = 0.05;
+
+        const employeeCpf = ((owSubject * 12) + awSubject) * empRate;
+
+        let eir = 1000;
+        if (age >= 55 && age < 60) eir = 6000;
+        if (age >= 60) eir = 8000;
+
+        return {
+            autoGrossIncome: projectedIncome,
+            autoReliefs: employeeCpf + eir
+        };
+    }, [transactions, cpfData.age]);
+
+    useEffect(() => {
+        if (!grossIncome && autoGrossIncome > 0) setGrossIncome(autoGrossIncome);
+        if (!reliefs && autoReliefs > 0) setReliefs(autoReliefs);
+    }, [autoGrossIncome, autoReliefs]);
+
+    const handleSyncTaxData = () => {
+        if (autoGrossIncome > 0) setGrossIncome(autoGrossIncome);
+        if (autoReliefs > 0) setReliefs(autoReliefs);
+    };
+    const [taxRecords, setTaxRecords] = useState(() => {
+        const saved = localStorage.getItem('taxRecords');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const currentYear = new Date().getFullYear();
 
     // Singapore Income Tax Brackets (YA 2024 onwards)
     const taxBrackets = [
@@ -50,12 +102,45 @@ const Tax = () => {
         return ((calculatedTax / income) * 100).toFixed(2);
     }, [calculatedTax, grossIncome]);
 
+    const handleSaveRecord = () => {
+        if (!grossIncome || (chargeableIncome <= 0 && parseFloat(grossIncome) === 0)) return;
+        const newRecord = {
+            id: Date.now(),
+            year: currentYear,
+            date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+            grossIncome: parseFloat(grossIncome) || 0,
+            reliefs: parseFloat(reliefs) || 0,
+            chargeableIncome,
+            calculatedTax,
+            effectiveTaxRate
+        };
+        const updatedRecords = [newRecord, ...taxRecords];
+        setTaxRecords(updatedRecords);
+        localStorage.setItem('taxRecords', JSON.stringify(updatedRecords));
+        // Reset inputs when saving
+        setGrossIncome('');
+        setReliefs('');
+    };
+
+    const handleDeleteRecord = (id) => {
+        const updatedRecords = taxRecords.filter(record => record.id !== id);
+        setTaxRecords(updatedRecords);
+        localStorage.setItem('taxRecords', JSON.stringify(updatedRecords));
+    };
+
     return (
         <div className="tax-page">
             <div className="tax-hero">
                 <div className="hero-content">
                     <h1>Income Tax <span className="highlight">Calculator</span></h1>
-                    <p className="hero-subtitle">Simplified Singapore Income Tax Estimation for YA 2024</p>
+                    <p className="hero-subtitle">Simplified Singapore Income Tax Estimation for YA {currentYear}</p>
+                    <button
+                        onClick={handleSyncTaxData}
+                        style={{ marginTop: '1rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                        title="Auto-fill Gross Income and CPF Reliefs based on your latest Salary and Bonus from Transactions"
+                    >
+                        🔄 Auto-Fill from Transactions
+                    </button>
                 </div>
             </div>
 
@@ -158,10 +243,52 @@ const Tax = () => {
                                 <label>Monthly Provision</label>
                                 <div className="stat-val">${(calculatedTax / 12).toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                             </div>
+                            <button className="save-tax-btn" onClick={handleSaveRecord}>
+                                Save Record
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {taxRecords.length > 0 && (
+                <div className="tax-history-section">
+                    <div className="history-header">
+                        <h2>Past Tax Records</h2>
+                    </div>
+                    <div className="history-grid">
+                        {taxRecords.map(record => (
+                            <div key={record.id} className="glass-card history-card">
+                                <button className="delete-record-btn" onClick={() => handleDeleteRecord(record.id)} title="Delete Record">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
+                                <div className="history-card-header">
+                                    <h3>YA {record.year}</h3>
+                                    <span className="record-date">{record.date}</span>
+                                </div>
+                                <div className="history-card-body">
+                                    <div className="history-row">
+                                        <span className="history-label">Gross Income</span>
+                                        <span className="history-val">${record.grossIncome.toLocaleString()}</span>
+                                    </div>
+                                    <div className="history-row">
+                                        <span className="history-label">Reliefs</span>
+                                        <span className="history-val">${record.reliefs.toLocaleString()}</span>
+                                    </div>
+                                    <div className="history-divider"></div>
+                                    <div className="history-row total">
+                                        <span className="history-label">Tax Payable</span>
+                                        <span className="history-val">${record.calculatedTax.toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

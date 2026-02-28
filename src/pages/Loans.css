@@ -1,0 +1,415 @@
+/* Loans.css - Premium Glassmorphism Design */
+
+.loans-page {
+    padding: 2.5rem;
+    max-width: 1250px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.loans-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 3rem;
+}
+
+.header-info h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--color-text) 0%, var(--color-text-muted) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+}
+
+/* Summary Cards */
+.loans-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.summary-card {
+    background: var(--glass-background);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.card-icon {
+    font-size: 2.2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+}
+
+.summary-card.owed .card-icon {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.summary-card.owe .card-icon {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.summary-card.net.positive .card-icon {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.summary-card.net.negative .card-icon {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.summary-card h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.amount {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--color-text);
+    line-height: 1;
+}
+
+.balance-label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: 0.3rem;
+    display: block;
+}
+
+/* Layout Columns */
+.loans-content {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2.5rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+/* Friends List */
+.friends-list {
+    background: var(--glass-background);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 1rem;
+    height: fit-content;
+}
+
+.friend-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 14px;
+    transition: background 0.2s;
+}
+
+.friend-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.friend-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.friend-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.friend-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.friend-name {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.friend-status {
+    font-size: 0.85rem;
+}
+
+.friend-status.positive {
+    color: #10b981;
+}
+
+.friend-status.negative {
+    color: #ef4444;
+}
+
+.btn-settle-mini {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-settle-mini:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+/* Activity List */
+.filter-tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.25rem;
+    border-radius: 10px;
+    gap: 2px;
+}
+
+.filter-tab {
+    border: none;
+    background: transparent;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-tab.active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.loan-card {
+    background: var(--glass-background);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.loan-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(4px);
+}
+
+.loan-card.settled {
+    opacity: 0.6;
+}
+
+.loan-date {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    width: 50px;
+    text-align: center;
+}
+
+.loan-main {
+    flex: 1;
+}
+
+.loan-description {
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.2rem;
+}
+
+.loan-sub {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.loan-amount {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.loan-amount.lent {
+    color: #10b981;
+}
+
+.loan-amount.borrowed {
+    color: #ef4444;
+}
+
+.loan-amount.settled-text {
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+}
+
+.loan-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-check,
+.btn-delete-mini {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-muted);
+    transition: all 0.2s;
+}
+
+.btn-check.active {
+    background: #10b981;
+    color: white;
+}
+
+.btn-check:hover:not(.active) {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.btn-delete-mini:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* Form Elements */
+.type-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.type-btn {
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.type-btn.lent.active {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.type-btn.borrowed.active {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Utilities */
+.empty-mini {
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 2rem 0;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+    .loans-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .loans-content {
+        grid-template-columns: 1fr;
+    }
+
+    .friends-column {
+        order: 2;
+    }
+
+    .activity-column {
+        order: 1;
+    }
+}

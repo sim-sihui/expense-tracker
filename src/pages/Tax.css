@@ -318,3 +318,142 @@
         transform: translateY(0);
     }
 }
+
+/* ── Tax History ── */
+.tax-history-section {
+    margin-top: 4rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.history-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.history-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.history-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.history-card {
+    position: relative;
+    padding: 1.5rem;
+}
+
+.history-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.history-card-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--color-primary);
+}
+
+.record-date {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.history-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.history-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.history-label {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+}
+
+.history-val {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.history-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 0.5rem 0;
+}
+
+.history-row.total .history-label {
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.history-row.total .history-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.delete-record-btn {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    background: rgba(244, 63, 94, 0.1);
+    color: #f43f5e;
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.history-card:hover .delete-record-btn {
+    opacity: 1;
+}
+
+.delete-record-btn:hover {
+    background: #f43f5e;
+    color: white;
+}
+
+/* Save Button */
+.save-tax-btn {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--nav-from), var(--nav-to));
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.save-tax-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.save-tax-btn:active {
+    transform: translateY(0);
+}

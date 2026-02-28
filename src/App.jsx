@@ -39,6 +39,10 @@ function App() {
     const saved = localStorage.getItem('cards')
     return saved ? JSON.parse(saved) : []
   })
+  const [loans, setLoans] = useState(() => {
+    const saved = localStorage.getItem('loans')
+    return saved ? JSON.parse(saved) : []
+  })
 
   // UPDATED: Initialize with history array for the chart
   const [emergencyFund, setEmergencyFund] = useState(() => {
@@ -57,6 +61,7 @@ function App() {
   useEffect(() => { localStorage.setItem('emergencyFund', JSON.stringify(emergencyFund)) }, [emergencyFund])
   useEffect(() => { localStorage.setItem('cpfData', JSON.stringify(cpfData)) }, [cpfData])
   useEffect(() => { localStorage.setItem('cards', JSON.stringify(cards)) }, [cards])
+  useEffect(() => { localStorage.setItem('loans', JSON.stringify(loans)) }, [loans])
 
   // --- Handlers ---
   const addTransaction = (transaction) => {
@@ -66,6 +71,19 @@ function App() {
       date: new Date(transaction.date + 'T00:00:00').toISOString()
     }
     setTransactions([...transactions, newTransaction])
+  }
+
+  const addBulkTransactions = (newTxs) => {
+    let currentId = Date.now()
+    const processedTxs = newTxs.map(tx => {
+      currentId++
+      return {
+        ...tx,
+        id: currentId,
+        date: new Date(tx.date + 'T00:00:00').toISOString()
+      }
+    })
+    setTransactions([...transactions, ...processedTxs])
   }
 
   const updateTransaction = (id, updatedData) => {
@@ -93,6 +111,10 @@ function App() {
   const addCard = (card) => { setCards([...cards, { ...card, id: Date.now() }]) }
   const updateCard = (id, updated) => { setCards(cards.map(c => c.id === id ? { ...updated, id } : c)) }
   const deleteCard = (id) => { setCards(cards.filter(c => c.id !== id)) }
+
+  const addLoan = (loan) => { setLoans([...loans, { ...loan, id: Date.now() }]) }
+  const updateLoan = (id, updated) => { setLoans(loans.map(l => l.id === id ? { ...updated, id } : l)) }
+  const deleteLoan = (id) => { setLoans(loans.filter(l => l.id !== id)) }
 
   // UPDATED: Emergency Fund Handler to capture Chart History
   const updateEmergencyFund = (newData) => {
@@ -140,18 +162,23 @@ function App() {
             savingsGoals={savingsGoals}
             emergencyFund={emergencyFund}
             onAddTransaction={addTransaction}
+            onAddBulkTransactions={addBulkTransactions}
             onUpdateTransaction={updateTransaction}
             onDeleteTransaction={deleteTransaction}
             customCategories={customCategories}
             onAddCustomCategory={addCustomCategory}
             onUpdateSavingsGoal={updateSavingsGoal}
             onUpdateEmergencyFund={updateEmergencyFund}
+            loans={loans}
+            onAddLoan={addLoan}
+            onUpdateLoan={updateLoan}
+            onDeleteLoan={deleteLoan}
           />
         )
       case 'calendar':
         return <Calendar transactions={transactions} />
       case 'cpf':
-        return <CPF cpfData={cpfData} onUpdateCPF={updateCPF} />
+        return <CPF cpfData={cpfData} onUpdateCPF={updateCPF} transactions={transactions} />
       case 'assets':
         return (
           <Assets
@@ -162,7 +189,7 @@ function App() {
           />
         )
       case 'tax':
-        return <Tax />
+        return <Tax transactions={transactions} cpfData={cpfData} />
       default:
         return <Dashboard {...commonProps} />
     }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { formatMoney } from '../utils/formatMoney'
 import './cpf.css'
 
@@ -18,7 +18,7 @@ function getRates(age) {
     return CPF_RATES[4]
 }
 
-const CPF = ({ cpfData, onUpdateCPF }) => {
+const CPF = ({ cpfData, onUpdateCPF, transactions = [] }) => {
     const [showTopUpModal, setShowTopUpModal] = useState(false)
     const [topUpAmount, setTopUpAmount] = useState('')
     const [topUpAccount, setTopUpAccount] = useState('sa')
@@ -26,6 +26,7 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
         const saved = localStorage.getItem('cpfHousingUsed')
         return saved ? parseFloat(saved) : 0
     })
+    const fileInputRef = useRef(null)
 
     // Inline form state
     const [form, setForm] = useState({
@@ -40,6 +41,29 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
     const [calcYear, setCalcYear] = useState('2025')
     const [calcSalary, setCalcSalary] = useState(cpfData.salary || '')
     const [calcBonus, setCalcBonus] = useState('')
+
+    const { latestSalary, annualBonus } = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        const salaryTxs = transactions.filter(t => t.type === 'income' && t.category === 'Salary');
+        salaryTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const latest = salaryTxs.length > 0 ? salaryTxs[0].amount : 0;
+
+        const bonus = transactions
+            .filter(t => t.type === 'income' && t.category === 'Bonus' && new Date(t.date).getFullYear() === currentYear)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        return { latestSalary: latest, annualBonus: bonus };
+    }, [transactions]);
+
+    useEffect(() => {
+        if (!calcSalary && latestSalary > 0) setCalcSalary(latestSalary);
+        if (!calcBonus && annualBonus > 0) setCalcBonus(annualBonus);
+    }, [latestSalary, annualBonus]);
+
+    const handleSyncOWAW = () => {
+        setCalcSalary(latestSalary || calcSalary);
+        setCalcBonus(annualBonus || calcBonus);
+    };
 
     const rates = useMemo(() => getRates(Number(cpfData.age) || 30), [cpfData.age])
 
@@ -114,6 +138,63 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
         localStorage.setItem('cpfHousingUsed', v)
     }
 
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            const text = event.target.result
+            parseCPFCSV(text)
+        }
+        reader.readAsText(file)
+        e.target.value = null // reset
+    }
+
+    const parseCPFCSV = (text) => {
+        const lines = text.split(/\r?\n/)
+        let newOa = form.oa
+        let newSa = form.sa
+        let newMa = form.ma
+        let updated = false
+
+        // Match amounts like 1,234.56 or S$ 1234.56 or 1234.56 or 123,456.78
+        const amountRegex = /(?:S\$)?\s?([\d,]+\.\d{2})/
+
+        for (const line of lines) {
+            const lower = line.toLowerCase()
+            const match = line.match(amountRegex)
+            if (match) {
+                const amount = parseFloat(match[1].replace(/,/g, ''))
+                // Specifically look for account names in the same line
+                if (lower.includes('ordinary account') || lower.includes('oa contribution')) {
+                    newOa = amount
+                    updated = true
+                } else if (lower.includes('special account') || lower.includes('sa contribution')) {
+                    newSa = amount
+                    updated = true
+                } else if (lower.includes('medisave account') || lower.includes('ma contribution')) {
+                    newMa = amount
+                    updated = true
+                }
+            }
+        }
+
+        if (updated) {
+            setForm(prev => ({ ...prev, oa: newOa, sa: newSa, ma: newMa }))
+            onUpdateCPF({
+                ...cpfData,
+                oa: newOa,
+                sa: newSa,
+                ma: newMa,
+                lastUpdated: new Date().toISOString(),
+            })
+            alert("CPF balances successfully imported from CSV!")
+        } else {
+            alert("We couldn't detect any of the standard CPF account balances in this file. Please ensure it's a valid CPF statement CSV.")
+        }
+    }
+
     const accounts = [
         {
             key: 'oa', label: 'Ordinary Account', short: 'OA',
@@ -146,6 +227,21 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                             Last Sync: {new Date(cpfData.lastUpdated).toLocaleDateString()}
                         </span>
                     )}
+                    <input
+                        type="file"
+                        accept=".csv"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleFileUpload}
+                        title="Upload CPF Statement CSV"
+                    />
+                    <button
+                        className="btn btn-outline"
+                        onClick={() => fileInputRef.current.click()}
+                        style={{ marginRight: '8px', border: '1px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)' }}
+                    >
+                        Import CSV
+                    </button>
                     <button className="btn btn-primary" onClick={() => setShowTopUpModal(true)}>Top-Up</button>
                 </div>
             </div>
@@ -236,7 +332,17 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                 </div>
 
                 <div className="cpf-card ow-aw-calc" style={{ marginTop: 0 }}>
-                    <div className="cpf-card-title">OW & AW Annual Calculator</div>
+                    <div className="cpf-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        OW & AW Annual Calculator
+                        <button
+                            type="button"
+                            onClick={handleSyncOWAW}
+                            style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', cursor: 'pointer' }}
+                            title="Pull latest Salary and Year's Bonus from Transactions"
+                        >
+                            🔄 Sync from Transactions
+                        </button>
+                    </div>
                     <div className="ow-aw-calc-grid">
                         <div className="calc-inputs">
                             <div className="cpf-form-group">
