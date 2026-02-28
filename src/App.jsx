@@ -5,6 +5,7 @@ import Budget from './pages/Budget'
 import Transaction from './pages/Transaction'
 import Calendar from './pages/Calendar'
 import CPF from './pages/cpf'
+import Assets from './pages/Assets'
 import './App.css'
 import './theme.css'
 import { ThemeProvider } from './context/ThemeContext'
@@ -33,6 +34,10 @@ function App() {
     const saved = localStorage.getItem('cpfData')
     return saved ? JSON.parse(saved) : { oa: 0, sa: 0, ma: 0, salary: 0, age: 30 }
   })
+  const [cards, setCards] = useState(() => {
+    const saved = localStorage.getItem('cards')
+    return saved ? JSON.parse(saved) : []
+  })
 
   // UPDATED: Initialize with history array for the chart
   const [emergencyFund, setEmergencyFund] = useState(() => {
@@ -50,6 +55,7 @@ function App() {
   useEffect(() => { localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals)) }, [savingsGoals])
   useEffect(() => { localStorage.setItem('emergencyFund', JSON.stringify(emergencyFund)) }, [emergencyFund])
   useEffect(() => { localStorage.setItem('cpfData', JSON.stringify(cpfData)) }, [cpfData])
+  useEffect(() => { localStorage.setItem('cards', JSON.stringify(cards)) }, [cards])
 
   // --- Handlers ---
   const addTransaction = (transaction) => {
@@ -82,6 +88,10 @@ function App() {
   const deleteSavingsGoal = (id) => { setSavingsGoals(savingsGoals.filter(g => g.id !== id)) }
 
   const updateCPF = (newData) => { setCpfData(prev => ({ ...prev, ...newData })) }
+
+  const addCard = (card) => { setCards([...cards, { ...card, id: Date.now() }]) }
+  const updateCard = (id, updated) => { setCards(cards.map(c => c.id === id ? { ...updated, id } : c)) }
+  const deleteCard = (id) => { setCards(cards.filter(c => c.id !== id)) }
 
   // UPDATED: Emergency Fund Handler to capture Chart History
   const updateEmergencyFund = (newData) => {
@@ -141,6 +151,15 @@ function App() {
         return <Calendar transactions={transactions} />
       case 'cpf':
         return <CPF cpfData={cpfData} onUpdateCPF={updateCPF} />
+      case 'assets':
+        return (
+          <Assets
+            cards={cards}
+            onAddCard={addCard}
+            onUpdateCard={updateCard}
+            onDeleteCard={deleteCard}
+          />
+        )
       default:
         return <Dashboard {...commonProps} />
     }

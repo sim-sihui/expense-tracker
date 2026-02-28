@@ -10,6 +10,25 @@ const PRESET_CATEGORIES = [
   'Freelance', 'Investment', 'Other'
 ]
 
+const CATEGORY_COLORS = {
+  'Salary':                  { bg: 'rgba(16,185,129,0.15)',  color: '#10b981' },
+  'Freelance':               { bg: 'rgba(20,184,166,0.15)',  color: '#14b8a6' },
+  'Investment':              { bg: 'rgba(34,197,94,0.15)',   color: '#22c55e' },
+  'Food & Dining':           { bg: 'rgba(234,179,8,0.15)',   color: '#eab308' },
+  'Food & Groceries':        { bg: 'rgba(234,179,8,0.15)',   color: '#eab308' },
+  'Transportation':          { bg: 'rgba(59,130,246,0.15)',  color: '#3b82f6' },
+  'Transport':               { bg: 'rgba(59,130,246,0.15)',  color: '#3b82f6' },
+  'Shopping':                { bg: 'rgba(236,72,153,0.15)',  color: '#ec4899' },
+  'Entertainment':           { bg: 'rgba(139,92,246,0.15)',  color: '#8b5cf6' },
+  'Bills & Utilities':       { bg: 'rgba(168,85,247,0.15)',  color: '#a855f7' },
+  'Utilities':               { bg: 'rgba(168,85,247,0.15)',  color: '#a855f7' },
+  'Housing (Rent/Mortgage)': { bg: 'rgba(249,115,22,0.15)', color: '#f97316' },
+  'Healthcare':              { bg: 'rgba(6,182,212,0.15)',   color: '#06b6d4' },
+  'Travel':                  { bg: 'rgba(99,102,241,0.15)',  color: '#6366f1' },
+  'Education':               { bg: 'rgba(99,102,241,0.15)', color: '#818cf8' },
+  'Other':                   { bg: 'rgba(100,116,139,0.15)', color: '#64748b' },
+}
+
 const ACCOUNTS = [
   'Cash', 'UOB One', 'OCBC 365', 'DBS Multiplier', 'Citibank',
   'Standard Chartered', 'HSBC', 'Maybank', 'Other'
@@ -64,7 +83,6 @@ const Transaction = ({
   const [formData, setFormData] = useState(emptyForm)
   const [typeFilter, setTypeFilter] = useState('all')   // all | income | expense
   const [monthFilter, setMonthFilter] = useState('all') // all | "Jan 2026" etc
-  const [expandedId, setExpandedId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [showCalc, setShowCalc] = useState(false)
   const [showAllocations, setShowAllocations] = useState(false)
@@ -445,123 +463,138 @@ const Transaction = ({
         </div>
       )}
 
-      {/* ── Filters row ── */}
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
-
-        {/* Type filter */}
-        <div className="transaction-filters" style={{ margin: 0 }}>
-          {['all', 'income', 'expense'].map(f => (
-            <button key={f} className={typeFilter === f ? 'active' : ''} onClick={() => setTypeFilter(f)}>
-              {f === 'all' ? 'All' : f === 'income' ? 'Income' : 'Expenses'}
-            </button>
+      {/* Month filter */}
+      {availableMonths.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>📅 Month:</span>
+          <button
+            onClick={() => setMonthFilter('all')}
+            style={{
+              padding: '5px 12px', borderRadius: '99px',
+              border: `1px solid ${monthFilter === 'all' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+              background: monthFilter === 'all' ? 'var(--color-primary)' : 'var(--color-surface-alt)',
+              color: monthFilter === 'all' ? '#fff' : 'var(--color-text)',
+              fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >All</button>
+          {availableMonths.map(m => (
+            <button
+              key={m}
+              onClick={() => setMonthFilter(m)}
+              style={{
+                padding: '5px 12px', borderRadius: '99px',
+                border: `1px solid ${monthFilter === m ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                background: monthFilter === m ? 'var(--color-primary)' : 'var(--color-surface-alt)',
+                color: monthFilter === m ? '#fff' : 'var(--color-text)',
+                fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
+              }}
+            >{m}</button>
           ))}
         </div>
+      )}
 
-        {/* Month filter */}
-        {availableMonths.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>📅 Month:</span>
-            <button
-              onClick={() => setMonthFilter('all')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '99px',
-                border: `1px solid ${monthFilter === 'all' ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                background: monthFilter === 'all' ? 'var(--color-primary)' : 'var(--color-surface-alt)',
-                color: monthFilter === 'all' ? '#fff' : 'var(--color-text)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >All</button>
-            {availableMonths.map(m => (
-              <button
-                key={m}
-                onClick={() => setMonthFilter(m)}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: '99px',
-                  border: `1px solid ${monthFilter === m ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                  background: monthFilter === m ? 'var(--color-primary)' : 'var(--color-surface-alt)',
-                  color: monthFilter === m ? '#fff' : 'var(--color-text)',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s',
-                }}
-              >{m}</button>
-            ))}
-          </div>
-        )}
+      {/* Type filter tabs */}
+      <div className="tx-tab-bar">
+        {[
+          { key: 'all',     label: 'All' },
+          { key: 'income',  label: 'Income' },
+          { key: 'expense', label: 'Expenses' },
+        ].map(({ key, label }) => (
+          <button
+            key={key}
+            className={`tx-tab${typeFilter === key ? ' active' : ''}`}
+            onClick={() => setTypeFilter(key)}
+          >{label}</button>
+        ))}
       </div>
 
-      {/* Count label */}
-      <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
+      <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.75rem' }}>
         {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''}
         {monthFilter !== 'all' ? ` in ${monthFilter}` : ''}
         {typeFilter !== 'all' ? ` · ${typeFilter}` : ''}
       </div>
 
-      {/* ── List ── */}
-      <div className="transaction-list">
-        {filteredTransactions.length > 0 ? filteredTransactions.map(t => (
-          <div key={t.id} className={`transaction-item ${t.type}`}>
-            <div className="transaction-info" style={{ cursor: 'pointer' }}
-              onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}>
-              <div className="transaction-main">
-                <span className="description">{t.description}</span>
-                <div className="transaction-tags">
-                  <span className="tag tag-category">{t.category}</span>
-                  {t.needWant && t.type === 'expense' && (
-                    <span className={`tag tag-needwant-${t.needWant}`}>
-                      {t.needWant === 'need' ? '🛒 Need'
-                        : t.needWant === 'want' ? '🛍️ Want'
-                        : t.needWant === 'savings' ? '🏦 Savings'
-                        : '📈 Invest'}
+      {/* ── Transaction Table ── */}
+      {filteredTransactions.length > 0 ? (
+        <div className="tx-table-wrap">
+          <div className="tx-table">
+            <div className="tx-table-head">
+              <div>DATE</div>
+              <div>DESCRIPTION</div>
+              <div>CATEGORY</div>
+              <div>PAYMENT</div>
+              <div>TYPE</div>
+              <div className="tx-th-amount">AMOUNT</div>
+              <div />
+            </div>
+
+            {filteredTransactions.map(t => {
+              const catStyle = CATEGORY_COLORS[t.category] || { bg: 'rgba(100,116,139,0.15)', color: '#64748b' }
+              const payment = [t.paymentType, t.account].filter(Boolean).join(' / ') || null
+
+              return (
+                <div key={t.id} className="tx-table-row" onClick={() => openEditForm(t)}>
+                  <div className="tx-cell-date">
+                    {new Date(t.date).toLocaleDateString('en-SG', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                  </div>
+
+                  <div className="tx-cell-desc">
+                    <div className="tx-desc-name">{t.description}</div>
+                    <div className="tx-desc-chips">
+                      {t.needWant && t.type === 'expense' && (
+                        <span className="tx-desc-chip">
+                          {t.needWant === 'need' ? '🛒 Need'
+                            : t.needWant === 'want' ? '🛍️ Want'
+                            : t.needWant === 'savings' ? '🏦 Savings'
+                            : '📈 Invest'}
+                        </span>
+                      )}
+                      {t.cashbackBnpl && t.cashbackBnpl !== 'None' && (
+                        <span className="tx-desc-chip tx-chip-cashback">🎁 {t.cashbackBnpl}</span>
+                      )}
+                      {t.event && (
+                        <span className="tx-desc-chip">📅 {t.event}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="tx-cell-category">
+                    <span className="tx-cat-badge" style={{ background: catStyle.bg, color: catStyle.color }}>
+                      {t.category}
                     </span>
-                  )}
-                  {t.event && <span className="tag tag-event">📅 {t.event}</span>}
+                  </div>
+
+                  <div className="tx-cell-payment">
+                    {payment || <span className="tx-muted">—</span>}
+                  </div>
+
+                  <div className="tx-cell-type">
+                    <span className={`tx-type-badge tx-type-${t.type}`}>{t.type}</span>
+                  </div>
+
+                  <div className="tx-cell-amount">
+                    <span className={`tx-amount-val ${t.type}`}>
+                      {t.type === 'income' ? '+' : '-'}S$ {formatMoney(t.amount)}
+                    </span>
+                  </div>
+
+                  <div className="tx-cell-action" onClick={e => { e.stopPropagation(); onDeleteTransaction(t.id) }}>
+                    <button className="tx-delete-x" title="Delete">✕</button>
+                  </div>
                 </div>
-              </div>
-              <span className="date">
-                {new Date(t.date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </span>
-            </div>
-
-            <div className="transaction-amount">
-              <span className={`amount ${t.type}`}>
-                {t.type === 'income' ? '+' : '-'}${formatMoney(t.amount)}
-              </span>
-              <div className="transaction-btns">
-                <button className="edit-btn" onClick={() => openEditForm(t)}>Edit</button>
-                <button className="delete-btn" onClick={() => onDeleteTransaction(t.id)}>Delete</button>
-              </div>
-            </div>
-
-            {expandedId === t.id && (
-              <div className="transaction-detail">
-                {t.account && <div className="detail-chip">💳 {t.account}</div>}
-                {t.paymentType && <div className="detail-chip">📲 {t.paymentType}</div>}
-                {t.cashbackBnpl && t.cashbackBnpl !== 'None' && <div className="detail-chip">🎁 {t.cashbackBnpl}</div>}
-                {t.event && <div className="detail-chip">🗓️ {t.event}</div>}
-                {!t.account && !t.paymentType && !t.event && !(t.cashbackBnpl && t.cashbackBnpl !== 'None') && (
-                  <span className="detail-empty">No extra details recorded.</span>
-                )}
-              </div>
-            )}
+              )
+            })}
           </div>
-        )) : (
-          <div className="empty-state">
-            <p>
-              {monthFilter !== 'all'
-                ? `No ${typeFilter === 'all' ? '' : typeFilter + ' '}transactions in ${monthFilter}.`
-                : 'No transactions found. Add your first transaction!'}
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="empty-state">
+          <p>
+            {monthFilter !== 'all'
+              ? `No ${typeFilter === 'all' ? '' : typeFilter + ' '}transactions in ${monthFilter}.`
+              : 'No transactions found. Add your first transaction!'}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
