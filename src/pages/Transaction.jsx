@@ -11,22 +11,22 @@ const PRESET_CATEGORIES = [
 ]
 
 const CATEGORY_COLORS = {
-  'Salary':                  { bg: 'rgba(16,185,129,0.15)',  color: '#10b981' },
-  'Freelance':               { bg: 'rgba(20,184,166,0.15)',  color: '#14b8a6' },
-  'Investment':              { bg: 'rgba(34,197,94,0.15)',   color: '#22c55e' },
-  'Food & Dining':           { bg: 'rgba(234,179,8,0.15)',   color: '#eab308' },
-  'Food & Groceries':        { bg: 'rgba(234,179,8,0.15)',   color: '#eab308' },
-  'Transportation':          { bg: 'rgba(59,130,246,0.15)',  color: '#3b82f6' },
-  'Transport':               { bg: 'rgba(59,130,246,0.15)',  color: '#3b82f6' },
-  'Shopping':                { bg: 'rgba(236,72,153,0.15)',  color: '#ec4899' },
-  'Entertainment':           { bg: 'rgba(139,92,246,0.15)',  color: '#8b5cf6' },
-  'Bills & Utilities':       { bg: 'rgba(168,85,247,0.15)',  color: '#a855f7' },
-  'Utilities':               { bg: 'rgba(168,85,247,0.15)',  color: '#a855f7' },
+  'Salary': { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+  'Freelance': { bg: 'rgba(20,184,166,0.15)', color: '#14b8a6' },
+  'Investment': { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
+  'Food & Dining': { bg: 'rgba(234,179,8,0.15)', color: '#eab308' },
+  'Food & Groceries': { bg: 'rgba(234,179,8,0.15)', color: '#eab308' },
+  'Transportation': { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
+  'Transport': { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
+  'Shopping': { bg: 'rgba(236,72,153,0.15)', color: '#ec4899' },
+  'Entertainment': { bg: 'rgba(139,92,246,0.15)', color: '#8b5cf6' },
+  'Bills & Utilities': { bg: 'rgba(168,85,247,0.15)', color: '#a855f7' },
+  'Utilities': { bg: 'rgba(168,85,247,0.15)', color: '#a855f7' },
   'Housing (Rent/Mortgage)': { bg: 'rgba(249,115,22,0.15)', color: '#f97316' },
-  'Healthcare':              { bg: 'rgba(6,182,212,0.15)',   color: '#06b6d4' },
-  'Travel':                  { bg: 'rgba(99,102,241,0.15)',  color: '#6366f1' },
-  'Education':               { bg: 'rgba(99,102,241,0.15)', color: '#818cf8' },
-  'Other':                   { bg: 'rgba(100,116,139,0.15)', color: '#64748b' },
+  'Healthcare': { bg: 'rgba(6,182,212,0.15)', color: '#06b6d4' },
+  'Travel': { bg: 'rgba(99,102,241,0.15)', color: '#6366f1' },
+  'Education': { bg: 'rgba(99,102,241,0.15)', color: '#818cf8' },
+  'Other': { bg: 'rgba(100,116,139,0.15)', color: '#64748b' },
 }
 
 const ACCOUNTS = [
@@ -496,8 +496,8 @@ const Transaction = ({
       {/* Type filter tabs */}
       <div className="tx-tab-bar">
         {[
-          { key: 'all',     label: 'All' },
-          { key: 'income',  label: 'Income' },
+          { key: 'all', label: 'All' },
+          { key: 'income', label: 'Income' },
           { key: 'expense', label: 'Expenses' },
         ].map(({ key, label }) => (
           <button
@@ -520,17 +520,19 @@ const Transaction = ({
           <div className="tx-table">
             <div className="tx-table-head">
               <div>DATE</div>
-              <div>DESCRIPTION</div>
+              <div>EXPENSE/INCOME</div>
               <div>CATEGORY</div>
-              <div>PAYMENT</div>
-              <div>TYPE</div>
-              <div className="tx-th-amount">AMOUNT</div>
+              <div>DESCRIPTION</div>
+              <div className="tx-th-amount">AMOUNT ($)</div>
+              <div>CASHBACK/BNPL</div>
+              <div>CARD USED</div>
+              <div>PAYMENT TYPE</div>
+              <div>WANT/NEED</div>
               <div />
             </div>
 
             {filteredTransactions.map(t => {
               const catStyle = CATEGORY_COLORS[t.category] || { bg: 'rgba(100,116,139,0.15)', color: '#64748b' }
-              const payment = [t.paymentType, t.account].filter(Boolean).join(' / ') || null
 
               return (
                 <div key={t.id} className="tx-table-row" onClick={() => openEditForm(t)}>
@@ -538,24 +540,8 @@ const Transaction = ({
                     {new Date(t.date).toLocaleDateString('en-SG', { year: 'numeric', month: '2-digit', day: '2-digit' })}
                   </div>
 
-                  <div className="tx-cell-desc">
-                    <div className="tx-desc-name">{t.description}</div>
-                    <div className="tx-desc-chips">
-                      {t.needWant && t.type === 'expense' && (
-                        <span className="tx-desc-chip">
-                          {t.needWant === 'need' ? '🛒 Need'
-                            : t.needWant === 'want' ? '🛍️ Want'
-                            : t.needWant === 'savings' ? '🏦 Savings'
-                            : '📈 Invest'}
-                        </span>
-                      )}
-                      {t.cashbackBnpl && t.cashbackBnpl !== 'None' && (
-                        <span className="tx-desc-chip tx-chip-cashback">🎁 {t.cashbackBnpl}</span>
-                      )}
-                      {t.event && (
-                        <span className="tx-desc-chip">📅 {t.event}</span>
-                      )}
-                    </div>
+                  <div className="tx-cell-type">
+                    <span className={`tx-type-badge tx-type-${t.type}`}>{t.type === 'expense' ? 'Expense' : 'Income'}</span>
                   </div>
 
                   <div className="tx-cell-category">
@@ -564,18 +550,48 @@ const Transaction = ({
                     </span>
                   </div>
 
-                  <div className="tx-cell-payment">
-                    {payment || <span className="tx-muted">—</span>}
-                  </div>
-
-                  <div className="tx-cell-type">
-                    <span className={`tx-type-badge tx-type-${t.type}`}>{t.type}</span>
+                  <div className="tx-cell-desc">
+                    <div className="tx-desc-name">{t.description}</div>
+                    <div className="tx-desc-chips">
+                      {t.event && (
+                        <span className="tx-desc-chip">📅 {t.event}</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="tx-cell-amount">
                     <span className={`tx-amount-val ${t.type}`}>
                       {t.type === 'income' ? '+' : '-'}S$ {formatMoney(t.amount)}
                     </span>
+                  </div>
+
+                  <div className="tx-cell-cashback">
+                    {t.cashbackBnpl && t.cashbackBnpl !== 'None' ? (
+                      <span className="tx-desc-chip tx-chip-cashback">🎁 {t.cashbackBnpl}</span>
+                    ) : (
+                      <span className="tx-muted">—</span>
+                    )}
+                  </div>
+
+                  <div className="tx-cell-card">
+                    {t.account ? t.account : <span className="tx-muted">—</span>}
+                  </div>
+
+                  <div className="tx-cell-payment-type">
+                    {t.paymentType ? t.paymentType : <span className="tx-muted">—</span>}
+                  </div>
+
+                  <div className="tx-cell-want-need">
+                    {t.needWant && t.type === 'expense' ? (
+                      <span className="tx-desc-chip">
+                        {t.needWant === 'need' ? '🛒 Need'
+                          : t.needWant === 'want' ? '🛍️ Want'
+                            : t.needWant === 'savings' ? '🏦 Savings'
+                              : '📈 Invest'}
+                      </span>
+                    ) : (
+                      <span className="tx-muted">—</span>
+                    )}
                   </div>
 
                   <div className="tx-cell-action" onClick={e => { e.stopPropagation(); onDeleteTransaction(t.id) }}>
