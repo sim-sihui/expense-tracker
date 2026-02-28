@@ -1,0 +1,320 @@
+/* Tax Page Styling — Revamped & Theme Compatible */
+
+.tax-page {
+    animation: fadeIn 0.4s ease-out;
+    color: var(--color-text);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 4rem;
+}
+
+.tax-hero {
+    text-align: center;
+    padding: 3rem 1rem;
+    margin-bottom: 2rem;
+}
+
+.tax-hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -0.03em;
+    color: var(--color-text);
+}
+
+.tax-hero .highlight {
+    background: linear-gradient(135deg, var(--nav-from), var(--nav-to));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+}
+
+/* ── Layout ── */
+.tax-main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+@media (max-width: 1024px) {
+    .tax-main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Cards ── */
+.glass-card {
+    background: var(--color-surface);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 24px;
+    padding: 2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px var(--color-shadow);
+}
+
+/* ── Left Column ── */
+.input-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.section-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text);
+}
+
+.icon-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-circle.income {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.icon-circle.reliefs {
+    background: rgba(244, 63, 94, 0.1);
+    color: #f43f5e;
+}
+
+.description-text {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.prefix {
+    position: absolute;
+    left: 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 2.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-input-border);
+    border-radius: 16px;
+    color: var(--color-text);
+    transition: all 0.3s ease;
+}
+
+.input-wrapper input:focus {
+    border-color: var(--color-primary);
+    background: var(--color-surface-solid);
+    box-shadow: 0 0 0 4px var(--color-focus);
+}
+
+/* ── Right Column ── */
+.results-display {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.info-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    text-align: center;
+}
+
+.summary-item label {
+    display: block;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.summary-item .val {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.summary-op {
+    font-size: 2rem;
+    color: var(--color-text-muted);
+    font-weight: 300;
+}
+
+.summary-divider {
+    height: 1px;
+    background: var(--color-border);
+    width: 100%;
+}
+
+.summary-result {
+    text-align: center;
+}
+
+.summary-result label {
+    display: block;
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.summary-result .val-large {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.education-note {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    font-style: italic;
+}
+
+.tax-outcome-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    .tax-outcome-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+.outcome-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.outcome-card.primary-tax {
+    background: linear-gradient(135deg, var(--nav-from), var(--nav-to));
+    border: none;
+    color: white;
+}
+
+.outcome-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.outcome-header h4 {
+    font-size: 1.1rem;
+    margin: 0;
+    color: white;
+}
+
+.outcome-amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+.tax-insight {
+    font-size: 0.9rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+}
+
+.status-badge.success {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 0.5rem 1.25rem;
+    border-radius: 100px;
+    font-weight: 600;
+}
+
+.secondary-stats {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 2rem;
+}
+
+.stat-unit {
+    padding: 1rem 0;
+}
+
+.stat-unit:first-child {
+    border-bottom: 1px solid var(--color-border);
+}
+
+.stat-unit label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.stat-val {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

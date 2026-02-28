@@ -6,6 +6,7 @@ import Transaction from './pages/Transaction'
 import Calendar from './pages/Calendar'
 import CPF from './pages/cpf'
 import Assets from './pages/Assets'
+import Tax from './pages/Tax'
 import './App.css'
 import './theme.css'
 import { ThemeProvider } from './context/ThemeContext'
@@ -160,6 +161,8 @@ function App() {
             onDeleteCard={deleteCard}
           />
         )
+      case 'tax':
+        return <Tax />
       default:
         return <Dashboard {...commonProps} />
     }

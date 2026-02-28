@@ -36,6 +36,11 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
         age: cpfData.age || 30,
     })
 
+    // OW/AW Calculator state
+    const [calcYear, setCalcYear] = useState('2025')
+    const [calcSalary, setCalcSalary] = useState(cpfData.salary || '')
+    const [calcBonus, setCalcBonus] = useState('')
+
     const rates = useMemo(() => getRates(Number(cpfData.age) || 30), [cpfData.age])
 
     const monthlyContrib = (cpfData.salary || 0) * (rates.emp + rates.er)
@@ -64,6 +69,19 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
     const yearsTo65 = Math.max(0, 65 - (cpfData.age || 30))
     const sa65 = (cpfData.sa || 0) * Math.pow(1.04, yearsTo65) + saMonthly * 12 * ((Math.pow(1.04, yearsTo65) - 1) / 0.04)
     const cpfLifeMonthly = Math.max(300, sa65 * 0.006)
+
+    // -- OW/AW Calculator Logic --
+    const owCeiling = calcYear === '2024' ? 6800 : calcYear === '2025' ? 7400 : 8000;
+    const owSubject = Math.min(Number(calcSalary) || 0, owCeiling);
+    const awCeiling = Math.max(0, 102000 - (owSubject * 12));
+    const awSubject = Math.min(Number(calcBonus) || 0, awCeiling);
+
+    const calcRates = getRates(Number(cpfData.age) || 30);
+    const annualGross = ((Number(calcSalary) || 0) * 12) + (Number(calcBonus) || 0);
+    const totalSubjectToCPF = (owSubject * 12) + awSubject;
+    const annualEmployeeCPF = totalSubjectToCPF * calcRates.emp;
+    const annualEmployerCPF = totalSubjectToCPF * calcRates.er;
+    const netTakeHome = annualGross - annualEmployeeCPF;
 
     const handleSave = (e) => {
         e.preventDefault()
@@ -119,7 +137,6 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
 
     return (
         <div className="cpf-page">
-
             {/* ── HEADER ── */}
             <div className="cpf-header">
                 <h1>CPF Overview</h1>
@@ -155,9 +172,10 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                 ))}
             </div>
 
-            {/* ── UPDATE FORM + RATES TABLE ── */}
+            <div className="form-section-title" style={{ marginTop: '10px' }}>Input & Calculation</div>
+
+            {/* ── TOOLS SECTION: UPDATE FORM + OW/AW CALCULATOR ── */}
             <div className="cpf-two-col">
-                {/* Inline Update Form */}
                 <div className="cpf-card cpf-update-form">
                     <div className="cpf-card-title">Update CPF Balances</div>
                     <form onSubmit={handleSave}>
@@ -197,9 +215,113 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                         </div>
                         <button type="submit" className="cpf-update-btn">Update CPF</button>
                     </form>
+
+                    <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--color-border)' }}>
+                        <div className="cpf-card-title" style={{ marginBottom: '12px', fontSize: '0.85rem' }}>OW Ceiling Reference</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <div style={{ background: 'rgba(var(--color-primary-rgb), 0.04)', padding: '10px', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>2024</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>$6,800</div>
+                            </div>
+                            <div style={{ background: 'rgba(var(--color-primary-rgb), 0.04)', padding: '10px', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>2025</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>$7,400</div>
+                            </div>
+                            <div style={{ background: 'rgba(var(--color-primary-rgb), 0.04)', padding: '10px', borderRadius: '8px', border: '1px solid var(--color-primary)' }}>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--color-primary)', textTransform: 'uppercase', marginBottom: '4px' }}>2026+</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-primary)' }}>$8,000</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Contribution Rates Table */}
+                <div className="cpf-card ow-aw-calc" style={{ marginTop: 0 }}>
+                    <div className="cpf-card-title">OW & AW Annual Calculator</div>
+                    <div className="ow-aw-calc-grid">
+                        <div className="calc-inputs">
+                            <div className="cpf-form-group">
+                                <label>Year (for OW Ceiling)</label>
+                                <select value={calcYear} onChange={e => setCalcYear(e.target.value)} className="cpf-usage-input" style={{ marginBottom: 0 }}>
+                                    <option value="2024">2024 (Ceiling: $6,800)</option>
+                                    <option value="2025">2025 (Ceiling: $7,400)</option>
+                                    <option value="2026">2026+ (Ceiling: $8,000)</option>
+                                </select>
+                            </div>
+                            <div className="cpf-form-group">
+                                <label>Monthly Salary (OW)</label>
+                                <input type="number" min="0" step="0.01" placeholder="e.g. 5000"
+                                    value={calcSalary}
+                                    onChange={e => setCalcSalary(e.target.value)} />
+                                <div style={{ fontSize: '0.7rem', color: 'var(--color-primary)', marginTop: '4px' }}>
+                                    Subject to CPF: S$ {formatMoney(owSubject)} / mo
+                                </div>
+                            </div>
+                            <div className="cpf-form-group">
+                                <label>Annual Bonus (AW)</label>
+                                <input type="number" min="0" step="0.01" placeholder="e.g. 15000"
+                                    value={calcBonus}
+                                    onChange={e => setCalcBonus(e.target.value)} />
+                                <div style={{ fontSize: '0.7rem', color: 'var(--color-primary)', marginTop: '4px' }}>
+                                    Subject to CPF: S$ {formatMoney(awSubject)} / yr (Max: S$ {formatMoney(awCeiling)})
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="calc-results">
+                            <div className="calc-res-row">
+                                <span className="calc-res-label">Annual Gross Pay</span>
+                                <span className="calc-res-val">S$ {formatMoney(annualGross)}</span>
+                            </div>
+                            <div className="calc-res-row">
+                                <span className="calc-res-label">Your Contribution (Employee)</span>
+                                <span className="calc-res-val">- S$ {formatMoney(annualEmployeeCPF)}</span>
+                            </div>
+                            <div className="calc-res-row">
+                                <span className="calc-res-label">Employer Contribution (Extra)</span>
+                                <span className="calc-res-val highlight-brand">+ S$ {formatMoney(annualEmployerCPF)}</span>
+                            </div>
+                            <div className="calc-res-row" style={{ background: 'transparent', border: '1px solid var(--color-border)' }}>
+                                <span className="calc-res-label">Annual Take-Home Pay</span>
+                                <span className="calc-res-val highlight-green">S$ {formatMoney(netTakeHome)}</span>
+                            </div>
+
+                            <div style={{ marginTop: '16px', padding: '16px', borderRadius: '10px', background: 'rgba(var(--color-primary-rgb), 0.04)', border: '1px solid rgba(var(--color-primary-rgb), 0.1)' }}>
+                                <h4 style={{ fontSize: '0.85rem', color: 'var(--color-primary)', marginBottom: '8px', fontWeight: 700 }}>How is this calculated?</h4>
+                                <ul style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: 0, paddingLeft: '16px', lineHeight: '1.6' }}>
+                                    <li><strong>OW (Ordinary Wage):</strong> Monthly salary up to the cap.</li>
+                                    <li><strong>AW (Additional Wage):</strong> Bonuses, leave pay, etc.</li>
+                                    <li><strong>Annual Total Wage (TW):</strong> (OW × 12) + AW.</li>
+                                    <li><strong>Annual TW Ceiling:</strong> S$ 102,000 (Universal cap for all ages).</li>
+                                    <li><strong>OW Cap:</strong> S$ {formatMoney(owCeiling)} / month (for {calcYear}).</li>
+                                    <li><strong>AW Cap:</strong> $102,000 - (Total Annual OW subject to CPF).</li>
+                                    <li><strong>Note on Age:</strong> Your <strong>Age</strong> determines the <em>percentage rate</em> (currently {(calcRates.emp * 100).toFixed(1)}%), but the <strong>Caps</strong> are fixed for all employees.</li>
+                                </ul>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '8px', fontStyle: 'italic' }}>* Note: The Employee Rate ({(calcRates.emp * 100).toFixed(1)}%) and Employer Rate ({(calcRates.er * 100).toFixed(1)}%) are based on your inputted Age ({form.age}) from the section above.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="form-section-title">Insights & Rates</div>
+
+            <div className="cpf-two-col">
+                <div className="cpf-card">
+                    <div className="cpf-projection-title">CPF Projection — 10 Year Growth</div>
+                    {projection.map(row => {
+                        const pct = (row.total / maxProjected * 100).toFixed(1)
+                        return (
+                            <div key={row.year} className="cpf-projection-row">
+                                <span className="cpf-projection-label">Year {row.year} (Age {row.age})</span>
+                                <div className="cpf-projection-bar-wrap">
+                                    <div className="cpf-projection-bar" style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="cpf-projection-value">S${formatMoney(row.total)}</span>
+                            </div>
+                        )
+                    })}
+                </div>
+
                 <div className="cpf-card">
                     <div className="cpf-rates-header">
                         <div className="cpf-card-title" style={{ marginBottom: 0 }}>CPF Contribution Rates (MOM)</div>
@@ -230,48 +352,26 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                 </div>
             </div>
 
-            {/* ── 10-YEAR PROJECTION ── */}
-            <div className="cpf-card">
-                <div className="cpf-projection-title">CPF Projection — 10 Year Growth</div>
-                {projection.map(row => {
-                    const pct = (row.total / maxProjected * 100).toFixed(1)
-                    return (
-                        <div key={row.year} className="cpf-projection-row">
-                            <span className="cpf-projection-label">Year {row.year} (Age {row.age})</span>
-                            <div className="cpf-projection-bar-wrap">
-                                <div className="cpf-projection-bar" style={{ width: `${pct}%` }} />
-                            </div>
-                            <span className="cpf-projection-value">S${formatMoney(row.total)}</span>
-                        </div>
-                    )
-                })}
-            </div>
+            <div className="form-section-title">Retirement & Usage</div>
 
-            {/* ── CPF LIFE + USAGE TRACKER ── */}
             <div className="cpf-two-col">
-                {/* CPF LIFE Estimate */}
                 <div className="cpf-card cpf-life-card">
                     <div className="cpf-card-title">CPF LIFE Estimate</div>
                     <span className="cpf-life-badge">Retirement</span>
-
                     <div className="cpf-life-subtitle">Estimated SA at 55</div>
                     <div className="cpf-life-amount">S$ {formatMoney(sa55)}</div>
-
                     <div className="cpf-life-subtitle">Projected CPF LIFE Monthly Payout</div>
                     <div className="cpf-life-payout">
                         S$ {formatMoney(cpfLifeMonthly)}
                         <span className="cpf-life-payout-unit">/mo from 65</span>
                     </div>
-
                     <div className="cpf-life-note">
-                        ℹ️ Estimate based on Standard Plan. Actual payout depends on FRS/ERS at 55. Consult CPF Board for personalised estimates.
+                        ℹ️ Estimate based on Standard Plan. Actual payout depends on FRS/ERS at 55.
                     </div>
                 </div>
 
-                {/* CPF Usage Tracker */}
                 <div className="cpf-card cpf-usage-card">
                     <div className="cpf-card-title">CPF Usage Tracker</div>
-
                     <div className="cpf-usage-row">
                         <span className="usage-label">OA — Housing Budget Used</span>
                         <span className="usage-action">—</span>
@@ -279,11 +379,10 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                     <input
                         type="number"
                         className="cpf-usage-input"
-                        placeholder="Track HDB / private property OA withdrawals here"
+                        placeholder="Track HDB withdrawals here"
                         value={housingUsed || ''}
                         onChange={e => handleHousingChange(e.target.value)}
                     />
-
                     <div className="cpf-monthly-contrib-title">Monthly Contribution (Est.)</div>
                     <div className="cpf-monthly-contrib-grid">
                         <div className="cpf-contrib-box oa">
@@ -297,6 +396,38 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                         <div className="cpf-contrib-box ma">
                             <div className="cpf-contrib-box-label">To MA</div>
                             <div className="cpf-contrib-box-value">S$ {formatMoney(maMonthly)}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="form-section-title">Knowledge Base</div>
+
+            <div className="cpf-edu-section">
+                <div className="cpf-card">
+                    <div className="cpf-card-title">Understanding CPF Accounts & Benefits</div>
+                    <div className="cpf-edu-grid">
+                        <div className="cpf-edu-block">
+                            <h4>Account Breakdowns</h4>
+                            <ul>
+                                <li><strong>Ordinary Account (OA):</strong> For housing, insurance, and investment.</li>
+                                <li><strong>Special Account (SA):</strong> For old age and retirement savings.</li>
+                                <li><strong>Retirement Account (RA):</strong> Formed at 55 for lifelong payouts.</li>
+                                <li><strong>MediSave Account (MA):</strong> For healthcare and medical insurance.</li>
+                            </ul>
+                        </div>
+                        <div className="cpf-edu-block">
+                            <h4>Core Benefits</h4>
+                            <div className="cpf-benefits-grid" style={{ margin: 0 }}>
+                                <div className="benefit-item" style={{ padding: '12px' }}>
+                                    <span className="benefit-icon">📈</span>
+                                    <div><strong>Risk-Free Interest</strong></div>
+                                </div>
+                                <div className="benefit-item" style={{ padding: '12px' }}>
+                                    <span className="benefit-icon">🏖️</span>
+                                    <div><strong>Lifetime Payouts</strong></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -324,9 +455,6 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                                 <input type="number" className="form-input" min="0" step="0.01" placeholder="0.00"
                                     value={topUpAmount} onChange={e => setTopUpAmount(e.target.value)} style={{ width: '100%' }} />
                             </div>
-                            <div style={{ background: 'rgba(var(--color-primary-rgb), 0.06)', borderRadius: '10px', padding: '12px', fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
-                                💡 SA cash top-ups qualify for up to <strong>S$8,000 tax relief</strong> per year under the Retirement Sum Topping-Up (RSTU) scheme.
-                            </div>
                             <div className="form-actions" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
                                 <button type="button" onClick={() => setShowTopUpModal(false)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">Record Top-Up</button>
@@ -335,7 +463,6 @@ const CPF = ({ cpfData, onUpdateCPF }) => {
                     </div>
                 </div>
             )}
-
         </div>
     )
 }

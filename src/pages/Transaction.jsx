@@ -7,11 +7,12 @@ import './new-features.css'
 const PRESET_CATEGORIES = [
   'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
   'Bills & Utilities', 'Healthcare', 'Travel', 'Education', 'Salary',
-  'Freelance', 'Investment', 'Other'
+  'Bonus', 'Freelance', 'Investment', 'Other'
 ]
 
 const CATEGORY_COLORS = {
   'Salary': { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+  'Bonus': { bg: 'rgba(52,211,153,0.15)', color: '#34d399' },
   'Freelance': { bg: 'rgba(20,184,166,0.15)', color: '#14b8a6' },
   'Investment': { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
   'Food & Dining': { bg: 'rgba(234,179,8,0.15)', color: '#eab308' },
