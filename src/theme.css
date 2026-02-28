@@ -425,6 +425,28 @@ button.btn-primary {
   color: var(--color-text) !important;
 }
 
+/* Dark mode — date picker calendar icon */
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.8);
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Dark mode — Cancel button (form-actions) */
+[data-theme="dark"] .form-actions button[type="button"] {
+  background: rgba(148, 163, 184, 0.12) !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .form-actions button[type="button"]:hover {
+  background: rgba(148, 163, 184, 0.22) !important;
+}
+
 /* Dark mode — forms */
 [data-theme="dark"] .form-section-title {
   color: var(--color-text-muted) !important;
@@ -475,6 +497,39 @@ button.btn-primary {
   background: rgba(28, 10, 10, 0.5) !important;
   color: #f87171 !important;
   border-color: rgba(248, 113, 113, 0.2) !important;
+}
+
+[data-theme="dark"] .toggle-btn.active-savings {
+  background: rgba(30, 58, 138, 0.35) !important;
+  color: #60a5fa !important;
+  border-color: rgba(96, 165, 250, 0.3) !important;
+}
+
+[data-theme="dark"] .toggle-btn.active-invest {
+  background: rgba(88, 28, 135, 0.35) !important;
+  color: #c084fc !important;
+  border-color: rgba(192, 132, 252, 0.3) !important;
+}
+
+/* Tag colours for savings and invest */
+.tag-needwant-savings {
+  background: rgba(59, 130, 246, 0.1) !important;
+  color: #2563eb !important;
+}
+
+.tag-needwant-invest {
+  background: rgba(168, 85, 247, 0.1) !important;
+  color: #9333ea !important;
+}
+
+[data-theme="dark"] .tag-needwant-savings {
+  background: rgba(96, 165, 250, 0.15) !important;
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .tag-needwant-invest {
+  background: rgba(192, 132, 252, 0.15) !important;
+  color: #c084fc !important;
 }
 
 /* Dark mode — misc */

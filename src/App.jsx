@@ -126,11 +126,15 @@ function App() {
           <Transaction
             transactions={transactions}
             budgets={budgets}
+            savingsGoals={savingsGoals}
+            emergencyFund={emergencyFund}
             onAddTransaction={addTransaction}
             onUpdateTransaction={updateTransaction}
             onDeleteTransaction={deleteTransaction}
             customCategories={customCategories}
             onAddCustomCategory={addCustomCategory}
+            onUpdateSavingsGoal={updateSavingsGoal}
+            onUpdateEmergencyFund={updateEmergencyFund}
           />
         )
       case 'calendar':

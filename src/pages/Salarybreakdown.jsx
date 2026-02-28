@@ -10,7 +10,7 @@ const BUDGETS = [
   { key: 'invest', label: 'Invest', icon: '📈', color: '#a855f7', rgb: '168,85,247', desc: 'Stocks, CPF top-up, REITs' },
 ]
 
-const SalaryBreakdown = ({ totalIncome }) => {
+const SalaryBreakdown = ({ totalIncome, transactions = [] }) => {
   const [split, setSplit] = useState(() => {
     try { const s = localStorage.getItem('salarySplit'); return s ? JSON.parse(s) : DEFAULT_SPLIT }
     catch { return DEFAULT_SPLIT }
@@ -40,6 +40,15 @@ const SalaryBreakdown = ({ totalIncome }) => {
     const n = Math.max(0, Math.min(100, parseInt(val) || 0))
     setDraft(prev => ({ ...prev, [field]: n }))
   }
+
+  // Compute actual spending per bucket from tagged expense transactions
+  const actual = { needs: 0, wants: 0, savings: 0, invest: 0 }
+  transactions.filter(t => t.type === 'expense').forEach(t => {
+    if (t.needWant === 'need') actual.needs += t.amount
+    else if (t.needWant === 'want') actual.wants += t.amount
+    else if (t.needWant === 'savings') actual.savings += t.amount
+    else if (t.needWant === 'invest') actual.invest += t.amount
+  })
 
   if (totalIncome === 0) return null
 
@@ -117,28 +126,30 @@ const SalaryBreakdown = ({ totalIncome }) => {
       {/* Cards — reads from `split` (saved state), not draft */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem' }}>
         {BUDGETS.map(b => {
-          const amount = (totalIncome * split[b.key]) / 100
-          const pct = split[b.key]
+          const budget = (totalIncome * split[b.key]) / 100
+          const spent = actual[b.key]
+          const usedPct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0
+          const isOver = spent > budget
+          const hasData = spent > 0
           return (
             <div key={b.key} style={{
               borderRadius: '12px',
               padding: '1rem',
-              // Use rgba() with rgb values — works in all browsers
               background: `linear-gradient(135deg, rgba(${b.rgb},0.08) 0%, transparent 100%)`,
               border: `1px solid rgba(${b.rgb},0.25)`,
             }}>
-              {/* Icon + badge */}
+              {/* Icon + % badge */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <span style={{ fontSize: '1.3rem' }}>{b.icon}</span>
                 <span style={{
                   fontSize: '0.68rem', fontWeight: 800, color: b.color,
                   background: `rgba(${b.rgb},0.12)`,
                   padding: '2px 7px', borderRadius: '99px',
-                }}>{pct}%</span>
+                }}>{split[b.key]}%</span>
               </div>
-              {/* Amount */}
+              {/* Budget amount */}
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-text)', marginBottom: '1px' }}>
-                ${formatMoney(amount)}
+                ${formatMoney(budget)}
               </div>
               {/* Label */}
               <div style={{ fontSize: '0.72rem', fontWeight: 700, color: b.color, marginBottom: '2px' }}>
@@ -148,10 +159,37 @@ const SalaryBreakdown = ({ totalIncome }) => {
               <div style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', lineHeight: 1.4, marginBottom: '0.6rem' }}>
                 {b.desc}
               </div>
-              {/* Progress bar */}
-              <div style={{ height: '4px', background: 'var(--color-border)', borderRadius: '99px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: b.color, borderRadius: '99px', transition: 'width 0.5s ease' }} />
+              {/* Actual vs budget */}
+              {hasData && (
+                <div style={{ fontSize: '0.68rem', marginBottom: '0.4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: isOver ? '#ef4444' : 'var(--color-text-secondary)' }}>
+                    Used: <strong style={{ color: isOver ? '#ef4444' : b.color }}>${formatMoney(spent)}</strong>
+                  </span>
+                  <span style={{
+                    fontSize: '0.63rem', fontWeight: 700, padding: '1px 6px', borderRadius: '99px',
+                    background: isOver ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)',
+                    color: isOver ? '#ef4444' : '#16a34a',
+                  }}>
+                    {isOver ? `+$${formatMoney(spent - budget)} over` : `$${formatMoney(budget - spent)} left`}
+                  </span>
+                </div>
+              )}
+              {/* Progress bar: actual / budget */}
+              <div style={{ height: '5px', background: 'var(--color-border)', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${hasData ? usedPct : split[b.key]}%`,
+                  background: hasData ? (isOver ? '#ef4444' : b.color) : b.color,
+                  borderRadius: '99px',
+                  transition: 'width 0.5s ease',
+                  opacity: hasData ? 1 : 0.4,
+                }} />
               </div>
+              {hasData && (
+                <div style={{ fontSize: '0.6rem', color: 'var(--color-text-muted)', marginTop: '3px', textAlign: 'right' }}>
+                  {usedPct.toFixed(0)}% of budget used
+                </div>
+              )}
             </div>
           )
         })}

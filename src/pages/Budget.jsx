@@ -78,7 +78,7 @@ const Budget = ({
   onUpdateEmergencyFund
 }) => {
   // Tab state
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('safety')
 
   // Period filter state
   const [periodFilter, setPeriodFilter] = useState('monthly') // 'all' | 'monthly' | 'weekly' | 'daily'
@@ -539,82 +539,179 @@ const Budget = ({
   )
 
   // ── TAB: Safety Net ──
-  const renderSafetyNet = () => (
-    <>
-      <div className="section-header">
-        <h2><span className="section-icon">🏦</span> Emergency Fund</h2>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {emergencyFund.lastUpdated && (
-            <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-              Last Sync: {new Date(emergencyFund.lastUpdated).toLocaleDateString()}
-            </span>
-          )}
-          <button className="btn btn-primary" onClick={openEFEditor}>Update Fund</button>
-        </div>
-      </div>
+  const renderSafetyNet = () => {
+    // Burn rate from actual transactions (last 3 months)
+    const now = new Date()
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+    const recentExpenses = transactions.filter(t =>
+      t.type === 'expense' && new Date(t.date) >= threeMonthsAgo
+    )
+    const totalRecent = recentExpenses.reduce((s, t) => s + parseFloat(t.amount), 0)
+    const avgMonthlyBurn = totalRecent / 3
+    const dailyBurn = avgMonthlyBurn / 30
+    const runwayDays = avgMonthlyBurn > 0 ? Math.floor((emergencyFund.current / avgMonthlyBurn) * 30) : null
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        {/* Main Stats Card */}
-        <div className="budget-card">
-          <div className="budget-card-header">
-            <h3>🛡️ Safety Net</h3>
-            <span className="period-badge" style={{ background: 'var(--color-primary)', color: 'white' }}>
-              {emergencyFund?.targetMonths || 6} Months Goal
-            </span>
+    // Shield level
+    const shieldConfig =
+      monthsCovered < 1 ? { label: 'Critical', color: '#ef4444', bg: 'rgba(239,68,68,0.08)', icon: '🚨', grade: 'F', advice: 'Build your starter fund immediately — you have almost no safety margin.' }
+      : monthsCovered < 3 ? { label: 'Vulnerable', color: '#f97316', bg: 'rgba(249,115,22,0.08)', icon: '⚠️', grade: 'D', advice: 'Under 3 months — one unexpected event could derail your finances.' }
+      : monthsCovered < 6 ? { label: 'Stable', color: '#eab308', bg: 'rgba(234,179,8,0.08)', icon: '🛡️', grade: 'C', advice: "You're safe for now. Push to 6 months for true resilience." }
+      : monthsCovered < 9 ? { label: 'Secure', color: '#22c55e', bg: 'rgba(34,197,94,0.08)', icon: '✅', grade: 'B', advice: 'Strong safety net! Consider putting surplus savings to work in investments.' }
+      : { label: 'Bulletproof', color: '#6366f1', bg: 'rgba(99,102,241,0.08)', icon: '💪', grade: 'A+', advice: 'Exceptional resilience. Invest aggressively — your safety is locked in.' }
+
+    const milestones = [
+      { label: 'Starter buffer ($1,000)', tip: 'Essential first step', done: emergencyFund.current >= 1000 },
+      { label: '1-month coverage', tip: 'Covers short disruptions', done: monthsCovered >= 1 },
+      { label: '3-month coverage', tip: 'Minimum safe threshold', done: monthsCovered >= 3 },
+      { label: '6-month coverage', tip: 'Recommended for most people', done: monthsCovered >= 6 },
+      { label: 'Full target funded', tip: `${emergencyFund.targetMonths || 6}-month personal goal`, done: efPercent >= 100 },
+    ]
+
+    return (
+      <>
+        {/* Shield Status Banner */}
+        <div className="sn-hero" style={{ background: shieldConfig.bg, borderColor: shieldConfig.color }}>
+          <div className="sn-hero-left">
+            <div className="sn-grade" style={{ color: shieldConfig.color, borderColor: shieldConfig.color }}>
+              {shieldConfig.grade}
+            </div>
+            <div>
+              <div className="sn-shield-label" style={{ color: shieldConfig.color }}>
+                {shieldConfig.icon} {shieldConfig.label}
+              </div>
+              <div className="sn-shield-months">{monthsCovered.toFixed(1)} months of expenses covered</div>
+              <div className="sn-shield-advice">{shieldConfig.advice}</div>
+            </div>
           </div>
+          <div className="sn-hero-right">
+            {emergencyFund.lastUpdated && (
+              <span className="sn-last-sync">Last Sync: {new Date(emergencyFund.lastUpdated).toLocaleDateString()}</span>
+            )}
+            <button className="btn btn-primary" onClick={openEFEditor}>Update Fund</button>
+          </div>
+        </div>
 
-          <div className="budget-amounts">
-            <div className="amount-row">
-              <span>Current Progress:</span>
-              <strong>${formatMoney(emergencyFund.current)} / ${formatMoney(emergencyFund.target)}</strong>
+        {/* Stat Cards Row */}
+        <div className="sn-stats-row">
+          <div className="sn-stat-card">
+            <div className="sn-stat-icon">🔥</div>
+            <div>
+              <div className="sn-stat-label">Monthly Burn</div>
+              <div className="sn-stat-value">{avgMonthlyBurn > 0 ? `$${formatMoney(avgMonthlyBurn)}` : '–'}</div>
+              <div className="sn-stat-sub">avg last 3 months</div>
+            </div>
+          </div>
+          <div className="sn-stat-card">
+            <div className="sn-stat-icon">📅</div>
+            <div>
+              <div className="sn-stat-label">Survival Runway</div>
+              <div className="sn-stat-value" style={{ color: runwayDays !== null && runwayDays < 90 ? '#ef4444' : runwayDays !== null ? '#22c55e' : undefined }}>
+                {runwayDays !== null ? `${runwayDays}d` : '–'}
+              </div>
+              <div className="sn-stat-sub">at current burn rate</div>
+            </div>
+          </div>
+          <div className="sn-stat-card">
+            <div className="sn-stat-icon">💰</div>
+            <div>
+              <div className="sn-stat-label">Fund Balance</div>
+              <div className="sn-stat-value">${formatMoney(emergencyFund.current)}</div>
+              <div className="sn-stat-sub">{efPercent.toFixed(1)}% of ${formatMoney(emergencyFund.target)} goal</div>
+            </div>
+          </div>
+          <div className="sn-stat-card">
+            <div className="sn-stat-icon">📊</div>
+            <div>
+              <div className="sn-stat-label">Daily Burn</div>
+              <div className="sn-stat-value">{dailyBurn > 0 ? `$${formatMoney(dailyBurn)}` : '–'}</div>
+              <div className="sn-stat-sub">per day average</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress + Chart Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+          {/* Fund Progress */}
+          <div className="budget-card">
+            <div className="budget-card-header">
+              <h3>🏦 Emergency Fund</h3>
+              <span className="period-badge" style={{ background: shieldConfig.color, color: 'white' }}>
+                {emergencyFund?.targetMonths || 6} Mo Goal
+              </span>
+            </div>
+            <div className="budget-amounts">
+              <div className="amount-row"><span>Current</span><strong>${formatMoney(emergencyFund.current)}</strong></div>
+              <div className="amount-row"><span>Target</span><strong>${formatMoney(emergencyFund.target)}</strong></div>
+              <div className="amount-row">
+                <span>Gap</span>
+                <strong style={{ color: efPercent >= 100 ? '#22c55e' : '#f97316' }}>
+                  {efPercent >= 100 ? '✅ Fully Funded' : `$${formatMoney(Math.max(emergencyFund.target - emergencyFund.current, 0))} to go`}
+                </strong>
+              </div>
+            </div>
+            <div className="progress-container">
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${efPercent}%`, background: shieldConfig.color }} />
+              </div>
+              <span className="percentage">{efPercent.toFixed(1)}%</span>
+            </div>
+
+            {/* Survival Budget Breakdown */}
+            <div className="sn-survival">
+              <div className="sn-survival-title">Crisis Survival Budget</div>
+              <div className="sn-survival-row"><span>🏠 Housing</span><span>${formatMoney(efStrategy.housing)}/mo</span></div>
+              <div className="sn-survival-row"><span>🍔 Food</span><span>${formatMoney(efStrategy.food)}/mo</span></div>
+              <div className="sn-survival-row"><span>🚌 Transport</span><span>${formatMoney(efStrategy.transport)}/mo</span></div>
+              <div className="sn-survival-row sn-survival-total">
+                <span>Total Survival</span>
+                <span>${formatMoney(monthlySurvival)}/mo</span>
+              </div>
             </div>
           </div>
 
-          <div className="progress-container">
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${efPercent}%`, background: 'var(--color-primary)' }} />
-            </div>
-            <span className="percentage">{efPercent.toFixed(1)}%</span>
+          {/* Growth Chart */}
+          <div className="budget-card" style={{ height: '380px' }}>
+            <h4 style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '15px', letterSpacing: '0.5px' }}>
+              FUND GROWTH HISTORY
+            </h4>
+            <ResponsiveContainer width="100%" height="85%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorProg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={shieldConfig.color} stopOpacity={0.2} />
+                    <stop offset="95%" stopColor={shieldConfig.color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                <YAxis hide domain={[0, 'auto']} />
+                <Tooltip formatter={(value) => [`$${formatMoney(value)}`, 'Balance']} />
+                <Area type="monotone" dataKey="balance" stroke={shieldConfig.color} strokeWidth={3} fillOpacity={1} fill="url(#colorProg)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '10px' }}>
-            {efPercent >= 100
-              ? "✅ Fully Funded! You're financially bulletproof."
-              : `Gap: $${formatMoney(emergencyFund.target - emergencyFund.current)} remaining.`}
-          </p>
         </div>
 
-        {/* Growth Chart */}
-        <div className="budget-card" style={{ height: '260px' }}>
-          <h4 style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '15px', letterSpacing: '0.5px' }}>
-            FUND GROWTH HISTORY
-          </h4>
-          <ResponsiveContainer width="100%" height="85%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorProg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-              <YAxis hide domain={[0, 'auto']} />
-              <Tooltip formatter={(value) => [`$${formatMoney(value)}`, 'Balance']} />
-              <Area
-                type="monotone"
-                dataKey="balance"
-                stroke="var(--color-primary)"
-                strokeWidth={3}
-                fillOpacity={1}
-                fill="url(#colorProg)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+        {/* Safety Net Milestones */}
+        <div className="sn-roadmap">
+          <div className="section-header" style={{ marginBottom: '1rem' }}>
+            <h2><span className="section-icon">🗺️</span> Safety Net Milestones</h2>
+          </div>
+          <div className="sn-milestones">
+            {milestones.map((m, i) => (
+              <div key={i} className={`sn-milestone ${m.done ? 'done' : ''}`}>
+                <div className={`sn-milestone-dot ${m.done ? 'done' : ''}`}>{m.done ? '✓' : i + 1}</div>
+                <div className="sn-milestone-body">
+                  <div className="sn-milestone-label">{m.label}</div>
+                  <div className="sn-milestone-tip">{m.tip}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </>
-  )
+      </>
+    )
+  }
 
   return (
     <div className="budget">
@@ -622,22 +719,23 @@ const Budget = ({
       <div className="budget-page-header">
         <h1>Budget & Goals</h1>
         <div className="budget-tabs">
+          <button className={`budget-tab ${activeTab === 'safety' ? 'active' : ''}`} onClick={() => setActiveTab('safety')}>
+            <span className="tab-icon">🛡️</span> Safety Net
+          </button>
           <button className={`budget-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
             <span className="tab-icon">📊</span> Overview
           </button>
           <button className={`budget-tab ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')}>
             <span className="tab-icon">🎯</span> Goals
           </button>
-          <button className={`budget-tab ${activeTab === 'safety' ? 'active' : ''}`} onClick={() => setActiveTab('safety')}>
-            <span className="tab-icon">🛡️</span> Safety Net
-          </button>
         </div>
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'safety' && renderSafetyNet()}
       {activeTab === 'overview' && renderOverview()}
       {activeTab === 'goals' && renderGoals()}
-      {activeTab === 'safety' && renderSafetyNet()}
+      
 
       {/* ── BUDGET FORM MODAL ── */}
       {showForm && (

@@ -48,12 +48,16 @@ const toMonthKey = (dateStr) => {
 
 const Transaction = ({
   transactions,
-  budgets = [], // Add budgets prop
+  budgets = [],
+  savingsGoals = [],
+  emergencyFund,
   onAddTransaction,
   onUpdateTransaction,
   onDeleteTransaction,
   customCategories = [],
   onAddCustomCategory,
+  onUpdateSavingsGoal,
+  onUpdateEmergencyFund,
 }) => {
   const [showForm, setShowForm] = useState(false)
   const [formMode, setFormMode] = useState('simple')
@@ -63,6 +67,8 @@ const Transaction = ({
   const [expandedId, setExpandedId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [showCalc, setShowCalc] = useState(false)
+  const [showAllocations, setShowAllocations] = useState(false)
+  const [allocations, setAllocations] = useState({})
 
   const allCategories = [...PRESET_CATEGORIES]
   customCategories.forEach(c => { if (!allCategories.includes(c)) allCategories.push(c) })
@@ -91,6 +97,8 @@ const Transaction = ({
   const totalExpenses = summaryBase.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
 
   // ── Form helpers ───────────────────────────────────────────────────────
+  const totalAllocated = Object.values(allocations).reduce((s, v) => s + (parseFloat(v) || 0), 0)
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const finalCategory = isCustomCategory ? formData.customCategory : formData.category
@@ -104,13 +112,36 @@ const Transaction = ({
     const payload = { ...formData, category: finalCategory, account: finalAccount, amount: parseFloat(formData.amount) }
     editingId !== null ? onUpdateTransaction(editingId, payload) : onAddTransaction(payload)
 
+    // Apply savings/investment allocations (new transactions only)
+    if (editingId === null) {
+      Object.entries(allocations).forEach(([key, amtStr]) => {
+        const amt = parseFloat(amtStr)
+        if (!(amt > 0)) return
+        if (key === '__ef__') {
+          // Emergency fund allocation
+          if (onUpdateEmergencyFund && emergencyFund) {
+            onUpdateEmergencyFund({
+              ...emergencyFund,
+              current: (emergencyFund.current || 0) + amt,
+              lastUpdated: new Date().toISOString()
+            })
+          }
+        } else if (onUpdateSavingsGoal) {
+          const goal = savingsGoals.find(g => g.id === parseInt(key))
+          if (goal) onUpdateSavingsGoal(parseInt(key), { ...goal, currentAmount: (goal.currentAmount || 0) + amt })
+        }
+      })
+    }
+
     setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
+    setAllocations({}); setShowAllocations(false)
     setEditingId(null); setShowForm(false); setShowCalc(false)
   }
 
   const openForm = () => {
     setEditingId(null)
     setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
+    setAllocations({}); setShowAllocations(false)
     setShowCalc(false); setShowForm(true)
   }
 
@@ -137,6 +168,7 @@ const Transaction = ({
 
   const closeForm = () => {
     setShowForm(false); setEditingId(null); setShowCalc(false)
+    setAllocations({}); setShowAllocations(false)
     setFormData({ ...emptyForm, date: new Date().toISOString().split('T')[0] })
   }
 
@@ -164,7 +196,7 @@ const Transaction = ({
       </div>
 
       {/* Income allocation — based on currently filtered month (or all) */}
-      <SalaryBreakdown totalIncome={totalIncome} />
+      <SalaryBreakdown totalIncome={totalIncome} transactions={summaryBase} />
 
       {/* ── Modal ── */}
       {showForm && (
@@ -258,6 +290,88 @@ const Transaction = ({
                   </div>
                 </div>
 
+                {/* Classify as Need / Want / Savings / Invest — always shown for expenses */}
+                {formData.type === 'expense' && (
+                  <div className="form-row">
+                    <div className="form-group form-group-full">
+                      <label>Classify as</label>
+                      <div className="toggle-group">
+                        <button type="button" className={`toggle-btn ${formData.needWant === 'need' ? 'active-need' : ''}`} onClick={() => set('needWant', 'need')}>🛒 Need</button>
+                        <button type="button" className={`toggle-btn ${formData.needWant === 'want' ? 'active-want' : ''}`} onClick={() => set('needWant', 'want')}>🛍️ Want</button>
+                        <button type="button" className={`toggle-btn ${formData.needWant === 'savings' ? 'active-savings' : ''}`} onClick={() => set('needWant', 'savings')}>🏦 Savings</button>
+                        <button type="button" className={`toggle-btn ${formData.needWant === 'invest' ? 'active-invest' : ''}`} onClick={() => set('needWant', 'invest')}>📈 Invest</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Savings / Emergency Fund / Investment allocation — new transactions only */}
+                {editingId === null && (savingsGoals.length > 0 || emergencyFund) && (
+                  <div className="allocate-section">
+                    <button
+                      type="button"
+                      className="allocate-toggle-btn"
+                      onClick={() => setShowAllocations(p => !p)}
+                    >
+                      <span className="allocate-toggle-arrow">{showAllocations ? '▼' : '▶'}</span>
+                      Allocate to Savings / Emergency Fund
+                      <span className="label-optional" style={{ marginLeft: 6 }}>(optional)</span>
+                    </button>
+
+                    {showAllocations && (
+                      <div className="allocate-goals">
+                        {/* Emergency Fund row */}
+                        {emergencyFund && (
+                          <div className="allocate-row allocate-ef-row">
+                            <span className="allocate-icon">🛡️</span>
+                            <div className="allocate-info">
+                              <span className="allocate-name">Emergency Fund</span>
+                              <span className="allocate-progress">
+                                ${formatMoney(emergencyFund.current || 0)} / ${formatMoney(emergencyFund.target || 0)}
+                              </span>
+                            </div>
+                            <input
+                              type="number" min="0" step="0.01" placeholder="0.00"
+                              className="allocate-input"
+                              value={allocations['__ef__'] || ''}
+                              onChange={e => setAllocations(prev => ({ ...prev, '__ef__': e.target.value }))}
+                            />
+                          </div>
+                        )}
+
+                        {/* Savings goals */}
+                        {savingsGoals.map(g => (
+                          <div key={g.id} className="allocate-row">
+                            <span className="allocate-icon">{g.icon || '🎯'}</span>
+                            <div className="allocate-info">
+                              <span className="allocate-name">{g.name}</span>
+                              <span className="allocate-progress">
+                                ${formatMoney(g.currentAmount || 0)} / ${formatMoney(g.targetAmount)}
+                              </span>
+                            </div>
+                            <input
+                              type="number" min="0" step="0.01" placeholder="0.00"
+                              className="allocate-input"
+                              value={allocations[g.id] || ''}
+                              onChange={e => setAllocations(prev => ({ ...prev, [g.id]: e.target.value }))}
+                            />
+                          </div>
+                        ))}
+
+                        {formData.amount && (
+                          <div className={`allocate-summary ${totalAllocated > parseFloat(formData.amount) ? 'allocate-over' : ''}`}>
+                            <span>Allocating <strong>${formatMoney(totalAllocated)}</strong></span>
+                            <span> of <strong>${formatMoney(parseFloat(formData.amount) || 0)}</strong></span>
+                            {totalAllocated > parseFloat(formData.amount) && (
+                              <span className="allocate-warning"> — exceeds transaction amount</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {isDetailed && (
                   <div className="detailed-fields">
                     <div className="form-section-title">Event</div>
@@ -299,13 +413,6 @@ const Transaction = ({
                       <>
                         <div className="form-section-title">Classification</div>
                         <div className="form-row">
-                          <div className="form-group">
-                            <label>Need / Want</label>
-                            <div className="toggle-group">
-                              <button type="button" className={`toggle-btn ${formData.needWant === 'need' ? 'active-need' : ''}`} onClick={() => set('needWant', 'need')}>🛒 Need</button>
-                              <button type="button" className={`toggle-btn ${formData.needWant === 'want' ? 'active-want' : ''}`} onClick={() => set('needWant', 'want')}>🛍️ Want</button>
-                            </div>
-                          </div>
                           <div className="form-group">
                             <label>Cashback / BNPL</label>
                             <select value={formData.cashbackBnpl} onChange={e => set('cashbackBnpl', e.target.value)}>
@@ -409,7 +516,10 @@ const Transaction = ({
                   <span className="tag tag-category">{t.category}</span>
                   {t.needWant && t.type === 'expense' && (
                     <span className={`tag tag-needwant-${t.needWant}`}>
-                      {t.needWant === 'need' ? '🛒 Need' : '🛍️ Want'}
+                      {t.needWant === 'need' ? '🛒 Need'
+                        : t.needWant === 'want' ? '🛍️ Want'
+                        : t.needWant === 'savings' ? '🏦 Savings'
+                        : '📈 Invest'}
                     </span>
                   )}
                   {t.event && <span className="tag tag-event">📅 {t.event}</span>}
