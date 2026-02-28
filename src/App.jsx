@@ -73,8 +73,8 @@ function App() {
     if (name && !customCategories.includes(name)) { setCustomCategories([...customCategories, name]) }
   }
 
-  const addBudget = (budget) => { setBudgets([...budgets, { ...budget, id: Date.now() }]) }
-  const updateBudget = (id, updatedBudget) => { setBudgets(budgets.map(b => b.id === id ? { ...updatedBudget, id } : b)) }
+  const addBudget = (budget) => { setBudgets([...budgets, { ...budget, id: Date.now(), createdAt: new Date().toISOString() }]) }
+  const updateBudget = (id, updatedBudget) => { setBudgets(budgets.map(b => b.id === id ? { ...updatedBudget, id, createdAt: b.createdAt } : b)) }
   const deleteBudget = (id) => { setBudgets(budgets.filter(b => b.id !== id)) }
 
   const addSavingsGoal = (goal) => { setSavingsGoals([...savingsGoals, { ...goal, id: Date.now() }]) }
@@ -110,6 +110,8 @@ function App() {
         return (
           <Budget
             {...commonProps}
+            customCategories={customCategories}
+            onAddCustomCategory={addCustomCategory}
             onAddBudget={addBudget}
             onUpdateBudget={updateBudget}
             onDeleteBudget={deleteBudget}
@@ -123,6 +125,7 @@ function App() {
         return (
           <Transaction
             transactions={transactions}
+            budgets={budgets}
             onAddTransaction={addTransaction}
             onUpdateTransaction={updateTransaction}
             onDeleteTransaction={deleteTransaction}

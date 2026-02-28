@@ -48,6 +48,7 @@ const toMonthKey = (dateStr) => {
 
 const Transaction = ({
   transactions,
+  budgets = [], // Add budgets prop
   onAddTransaction,
   onUpdateTransaction,
   onDeleteTransaction,
@@ -65,6 +66,7 @@ const Transaction = ({
 
   const allCategories = [...PRESET_CATEGORIES]
   customCategories.forEach(c => { if (!allCategories.includes(c)) allCategories.push(c) })
+  budgets.forEach(b => { if (!allCategories.includes(b.category)) allCategories.push(b.category) })
 
   const isDetailed = formMode === 'detailed'
   const isCustomCategory = formData.category === '__custom__'
