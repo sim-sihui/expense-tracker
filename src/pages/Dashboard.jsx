@@ -128,10 +128,10 @@ const Dashboard = ({ transactions, budgets, emergencyFund }) => {
       </div>
 
       {/* ── NEW: EMERGENCY FUND TOP SECTION ── */}
-      <div className="ef-hero-section" style={{ 
-        background: 'var(--color-bg-secondary)', 
-        padding: '20px', 
-        borderRadius: '12px', 
+      <div className="ef-hero-section" style={{
+        background: 'var(--color-bg-secondary)',
+        padding: '20px',
+        borderRadius: '12px',
         marginBottom: '24px',
         border: '1px solid var(--color-border)'
       }}>
@@ -141,18 +141,18 @@ const Dashboard = ({ transactions, budgets, emergencyFund }) => {
             ${formatMoney(emergencyFund?.current || 0)} / ${formatMoney(emergencyFund?.target || 0)}
           </span>
         </div>
-        
+
         <div className="progress-bar" style={{ height: '12px', backgroundColor: 'var(--color-border)' }}>
-          <div 
-            className="progress-fill" 
-            style={{ 
-              width: `${efPercent}%`, 
+          <div
+            className="progress-fill"
+            style={{
+              width: `${efPercent}%`,
               backgroundColor: 'var(--color-primary)',
               boxShadow: '0 0 10px rgba(var(--color-primary-rgb), 0.3)'
             }}
           ></div>
         </div>
-        
+
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
             {efPercent.toFixed(1)}% of safety net reached

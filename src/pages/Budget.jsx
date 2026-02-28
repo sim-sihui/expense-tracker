@@ -33,6 +33,29 @@ const CATEGORY_STYLES = {
 
 const getCategoryStyle = (cat) => CATEGORY_STYLES[cat] || CATEGORY_STYLES.default
 
+const getBudgetEndDate = (budget) => {
+  if (!budget.startDate) return null
+  const d = new Date(budget.startDate)
+  if (budget.period === 'weekly') d.setDate(d.getDate() + 7)
+  else if (budget.period === 'yearly') d.setFullYear(d.getFullYear() + 1)
+  else d.setMonth(d.getMonth() + 1)
+  return d
+}
+
+const isBudgetPast = (budget) => {
+  const end = getBudgetEndDate(budget)
+  if (!end) return false
+  return end <= new Date()
+}
+
+const formatBudgetPeriodLabel = (budget) => {
+  if (!budget.startDate) return budget.period || 'Monthly'
+  const start = new Date(budget.startDate)
+  const end = getBudgetEndDate(budget)
+  const fmt = (d) => d.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })
+  return `${fmt(start)} – ${fmt(new Date(end - 1))}`
+}
+
 const PRESET_CATEGORIES = [
   'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
   'Bills & Utilities', 'Healthcare', 'Travel', 'Education', 'Salary',
@@ -61,13 +84,16 @@ const Budget = ({
   const [periodFilter, setPeriodFilter] = useState('monthly') // 'all' | 'monthly' | 'weekly' | 'daily'
   const [periodDate, setPeriodDate] = useState(new Date())
 
+  // Budget tab state (active / past)
+  const [budgetTab, setBudgetTab] = useState('active')
+
   // Modal/Form States
   const [showForm, setShowForm] = useState(false)
   const [showEFForm, setShowEFForm] = useState(false)
   const [editingBudget, setEditingBudget] = useState(null)
 
   // Form Data
-  const [formData, setFormData] = useState({ category: '', customCategory: '', amount: '', period: 'monthly' })
+  const [formData, setFormData] = useState({ category: '', customCategory: '', amount: '', period: 'monthly', startDate: new Date().toISOString().split('T')[0] })
 
   // Categories list
   const allCategories = [...PRESET_CATEGORIES]
@@ -265,14 +291,15 @@ const Budget = ({
     const payload = {
       category: finalCategory,
       amount: parseFloat(formData.amount),
-      period: formData.period
+      period: formData.period,
+      startDate: formData.startDate
     }
     if (editingBudget) {
       onUpdateBudget(editingBudget.id, payload)
     } else {
       onAddBudget(payload)
     }
-    setFormData({ category: '', customCategory: '', amount: '', period: 'monthly' })
+    setFormData({ category: '', customCategory: '', amount: '', period: 'monthly', startDate: new Date().toISOString().split('T')[0] })
     setEditingBudget(null)
     setShowForm(false)
   }
@@ -349,77 +376,114 @@ const Budget = ({
       {/* Category Budgets */}
       <div className="section-header">
         <h2><span className="section-icon">📂</span> Category Budgets</h2>
-        <button className="btn btn-primary" onClick={() => { setEditingBudget(null); setFormData({ category: '', customCategory: '', amount: '', period: 'monthly' }); setShowForm(true) }}>
+        <button className="btn btn-primary" onClick={() => { setEditingBudget(null); setFormData({ category: '', customCategory: '', amount: '', period: 'monthly', startDate: new Date().toISOString().split('T')[0] }); setShowForm(true) }}>
           + Add Category
         </button>
       </div>
 
-      {budgets.length === 0 ? (
-        <div className="budget-empty">
-          <div className="budget-empty-icon">📂</div>
-          <p>No budget categories yet. Add your first to start tracking spending.</p>
-        </div>
-      ) : (
-        <div className="category-grid">
-          {budgets.map(budget => {
-            const spent = calculateSpent(budget.category)
-            const rem = budget.amount - spent
-            const perc = (spent / budget.amount) * 100
-            const style = getCategoryStyle(budget.category)
-            return (
-              <div key={budget.id} className="cat-card" style={{ '--cat-color': style.color }}>
-                <div className="cat-card-header">
-                  <div className="cat-card-title">
-                    <div className="cat-icon">{style.icon}</div>
-                    <div>
-                      <span className="cat-name">{budget.category}</span>
-                      {budget.createdAt && (
-                        <div className="cat-created">Created {new Date(budget.createdAt).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+      {/* Mini Navbar: Active / Past */}
+      <div className="budget-mini-nav">
+        <button
+          className={`budget-mini-tab ${budgetTab === 'active' ? 'active' : ''}`}
+          onClick={() => setBudgetTab('active')}
+        >
+          Active
+          <span className="budget-mini-count">{budgets.filter(b => !isBudgetPast(b)).length}</span>
+        </button>
+        <button
+          className={`budget-mini-tab ${budgetTab === 'past' ? 'active' : ''}`}
+          onClick={() => setBudgetTab('past')}
+        >
+          Past
+          <span className="budget-mini-count">{budgets.filter(b => isBudgetPast(b)).length}</span>
+        </button>
+      </div>
+
+      {(() => {
+        const filtered = budgets.filter(b => budgetTab === 'past' ? isBudgetPast(b) : !isBudgetPast(b))
+        if (budgets.length === 0) return (
+          <div className="budget-empty">
+            <div className="budget-empty-icon">📂</div>
+            <p>No budget categories yet. Add your first to start tracking spending.</p>
+          </div>
+        )
+        if (filtered.length === 0) return (
+          <div className="budget-empty">
+            <div className="budget-empty-icon">{budgetTab === 'past' ? '🗂️' : '✅'}</div>
+            <p>{budgetTab === 'past' ? 'No past budgets yet.' : 'No active budgets right now.'}</p>
+          </div>
+        )
+        return (
+          <div className="category-grid">
+            {filtered.map(budget => {
+              const spent = calculateSpent(budget.category)
+              const rem = budget.amount - spent
+              const perc = (spent / budget.amount) * 100
+              const style = getCategoryStyle(budget.category)
+              const past = isBudgetPast(budget)
+              return (
+                <div key={budget.id} className={`cat-card ${past ? 'cat-card-past' : ''}`} style={{ '--cat-color': style.color }}>
+                  <div className="cat-card-header">
+                    <div className="cat-card-title">
+                      <div className="cat-icon">{style.icon}</div>
+                      <div>
+                        <span className="cat-name">{budget.category}</span>
+                        <div className="cat-meta">
+                          <span
+                            className="cat-period-badge"
+                            style={{ background: `color-mix(in srgb, ${style.color} 18%, transparent)`, color: style.color }}
+                          >
+                            {(budget.period || 'monthly').charAt(0).toUpperCase() + (budget.period || 'monthly').slice(1)}
+                          </span>
+                          <span className="cat-created">{formatBudgetPeriodLabel(budget)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="cat-card-actions">
+                      {!past && (
+                        <button onClick={() => {
+                          const categoryInList = allCategories.includes(budget.category)
+                          setEditingBudget(budget)
+                          setFormData({
+                            category: categoryInList ? budget.category : '__custom__',
+                            customCategory: categoryInList ? '' : budget.category,
+                            amount: budget.amount.toString(),
+                            period: budget.period || 'monthly',
+                            startDate: budget.startDate || new Date().toISOString().split('T')[0]
+                          })
+                          setShowForm(true)
+                        }} title="Edit">✏️</button>
                       )}
+                      <button onClick={() => onDeleteBudget(budget.id)} title="Delete">🗑️</button>
                     </div>
                   </div>
-                  <div className="cat-card-actions">
-                    <button onClick={() => {
-                      const categoryInList = allCategories.includes(budget.category)
-                      setEditingBudget(budget)
-                      setFormData({
-                        category: categoryInList ? budget.category : '__custom__',
-                        customCategory: categoryInList ? '' : budget.category,
-                        amount: budget.amount.toString(),
-                        period: budget.period || 'monthly'
-                      })
-                      setShowForm(true)
-                    }} title="Edit">✏️</button>
-                    <button onClick={() => onDeleteBudget(budget.id)} title="Delete">🗑️</button>
+                  <div className="cat-amounts">
+                    <div className="cat-amt-item">
+                      <span className="cat-amt-label">Budget</span>
+                      <span className="cat-amt-value">${formatMoney(budget.amount)}</span>
+                    </div>
+                    <div className="cat-amt-item">
+                      <span className="cat-amt-label">Spent</span>
+                      <span className={`cat-amt-value ${spent > budget.amount ? 'over' : ''}`}>${formatMoney(spent)}</span>
+                    </div>
                   </div>
+                  <div className="cat-progress">
+                    <div className="cat-bar">
+                      <div className={`cat-bar-fill ${perc > 100 ? 'over' : ''}`} style={{ width: `${Math.min(perc, 100)}%` }} />
+                    </div>
+                    <span className={`cat-pct ${perc > 100 ? 'over' : ''}`}>{perc.toFixed(0)}%</span>
+                  </div>
+                  {rem < 0 && (
+                    <div style={{ fontSize: '0.78rem', color: '#ef4444', fontWeight: 600, marginTop: '8px' }}>
+                      ⚠ Over by ${formatMoney(Math.abs(rem))}
+                    </div>
+                  )}
                 </div>
-                <div className="cat-amounts">
-                  <div className="cat-amt-item">
-                    <span className="cat-amt-label">Budget</span>
-                    <span className="cat-amt-value">${formatMoney(budget.amount)}</span>
-                  </div>
-                  <div className="cat-amt-item">
-                    <span className="cat-amt-label">Spent ({periodFilter === 'all' ? 'total' : getPeriodLabel()})</span>
-                    <span className={`cat-amt-value ${spent > budget.amount ? 'over' : ''}`}>${formatMoney(spent)}</span>
-                  </div>
-                </div>
-                <div className="cat-progress">
-                  <div className="cat-bar">
-                    <div className={`cat-bar-fill ${perc > 100 ? 'over' : ''}`} style={{ width: `${Math.min(perc, 100)}%` }} />
-                  </div>
-                  <span className={`cat-pct ${perc > 100 ? 'over' : ''}`}>{perc.toFixed(0)}%</span>
-                </div>
-                {rem < 0 && (
-                  <div style={{ fontSize: '0.78rem', color: '#ef4444', fontWeight: 600, marginTop: '8px' }}>
-                    ⚠ Over by ${formatMoney(Math.abs(rem))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )
-      }
+              )
+            })}
+          </div>
+        )
+      })()}
     </>
   )
 
@@ -609,7 +673,7 @@ const Budget = ({
               )}
               <div className="form-row" style={{ marginTop: '1rem' }}>
                 <div className="form-group">
-                  <label>Monthly Budget ($)</label>
+                  <label>Budget Amount ($)</label>
                   <input
                     type="number"
                     min="0"
@@ -628,6 +692,15 @@ const Budget = ({
                     <option value="yearly">Yearly</option>
                   </select>
                 </div>
+              </div>
+              <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label>Start Date</label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                  required
+                />
               </div>
               <div className="form-actions">
                 <button type="button" onClick={() => setShowForm(false)}>Cancel</button>

@@ -638,7 +638,84 @@
     font-size: 0.68rem;
     color: var(--color-text-muted);
     font-weight: 500;
-    margin-top: 1px;
+}
+
+.cat-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+}
+
+.cat-period-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 5px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+/* ── Budget Mini Navbar (Active / Past) ── */
+.budget-mini-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--color-surface-alt);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    width: fit-content;
+    margin-bottom: 1.25rem;
+}
+
+.budget-mini-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.4rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: var(--font-body);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.budget-mini-tab.active {
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.budget-mini-count {
+    background: var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.budget-mini-tab.active .budget-mini-count {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+/* ── Past Budget Card ── */
+.cat-card-past {
+    opacity: 0.7;
+    filter: grayscale(30%);
+}
+
+.cat-card-past:hover {
+    opacity: 0.9;
+    filter: grayscale(10%);
 }
 
 /* ── Responsive ── */

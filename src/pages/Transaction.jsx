@@ -89,8 +89,6 @@ const Transaction = ({
   const summaryBase = monthFilter === 'all' ? transactions : transactions.filter(t => toMonthKey(t.date) === monthFilter)
   const totalIncome = summaryBase.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
   const totalExpenses = summaryBase.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-  // Always use all income for the salary breakdown
-  const allTimeIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
 
   // ── Form helpers ───────────────────────────────────────────────────────
   const handleSubmit = (e) => {
@@ -165,8 +163,8 @@ const Transaction = ({
         </div>
       </div>
 
-      {/* Income allocation — always based on all-time income */}
-      <SalaryBreakdown totalIncome={allTimeIncome} />
+      {/* Income allocation — based on currently filtered month (or all) */}
+      <SalaryBreakdown totalIncome={totalIncome} />
 
       {/* ── Modal ── */}
       {showForm && (
