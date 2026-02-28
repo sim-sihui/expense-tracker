@@ -7,6 +7,12 @@ import Calendar from './pages/Calendar'
 import CPF from './pages/cpf'
 import Assets from './pages/Assets'
 import Tax from './pages/Tax'
+import Insurance from './pages/Insurance'
+import Investment from './pages/Investment'
+import MoneyFlow from './pages/MoneyFlow'
+import Wealth from './pages/Wealth'
+import ProtectionObligations from './pages/TaxInsurance'
+import Loans from './pages/Loans'
 import './App.css'
 import './theme.css'
 import { ThemeProvider } from './context/ThemeContext'
@@ -43,6 +49,14 @@ function App() {
     const saved = localStorage.getItem('loans')
     return saved ? JSON.parse(saved) : []
   })
+  const [insurancePolicies, setInsurancePolicies] = useState(() => {
+    const saved = localStorage.getItem('insurancePolicies')
+    return saved ? JSON.parse(saved) : []
+  })
+  const [investments, setInvestments] = useState(() => {
+    const saved = localStorage.getItem('investments')
+    return saved ? JSON.parse(saved) : []
+  })
 
   // UPDATED: Initialize with history array for the chart
   const [emergencyFund, setEmergencyFund] = useState(() => {
@@ -62,6 +76,8 @@ function App() {
   useEffect(() => { localStorage.setItem('cpfData', JSON.stringify(cpfData)) }, [cpfData])
   useEffect(() => { localStorage.setItem('cards', JSON.stringify(cards)) }, [cards])
   useEffect(() => { localStorage.setItem('loans', JSON.stringify(loans)) }, [loans])
+  useEffect(() => { localStorage.setItem('insurancePolicies', JSON.stringify(insurancePolicies)) }, [insurancePolicies])
+  useEffect(() => { localStorage.setItem('investments', JSON.stringify(investments)) }, [investments])
 
   // --- Handlers ---
   const addTransaction = (transaction) => {
@@ -116,6 +132,13 @@ function App() {
   const updateLoan = (id, updated) => { setLoans(loans.map(l => l.id === id ? { ...updated, id } : l)) }
   const deleteLoan = (id) => { setLoans(loans.filter(l => l.id !== id)) }
 
+  const addInsurancePolicy = (policy) => { setInsurancePolicies([...insurancePolicies, { ...policy, id: Date.now() }]) }
+  const updateInsurancePolicy = (id, updated) => { setInsurancePolicies(insurancePolicies.map(p => p.id === id ? { ...updated, id } : p)) }
+  const deleteInsurancePolicy = (id) => { setInsurancePolicies(insurancePolicies.filter(p => p.id !== id)) }
+
+  const addInvestment = (investment) => { setInvestments([...investments, { ...investment, id: Date.now() }]) }
+  const deleteInvestment = (id) => { setInvestments(investments.filter(i => i.id !== id)) }
+
   // UPDATED: Emergency Fund Handler to capture Chart History
   const updateEmergencyFund = (newData) => {
     setEmergencyFund(prev => {
@@ -135,61 +158,93 @@ function App() {
   }
 
   const renderPage = () => {
-    const commonProps = { transactions, budgets, savingsGoals, emergencyFund };
+    const commonProps = { transactions, budgets, savingsGoals, emergencyFund, cpfData, insurancePolicies, investments };
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard {...commonProps} />
-      case 'budget':
+      case 'moneyflow':
         return (
-          <Budget
-            {...commonProps}
-            customCategories={customCategories}
-            onAddCustomCategory={addCustomCategory}
-            onAddBudget={addBudget}
-            onUpdateBudget={updateBudget}
-            onDeleteBudget={deleteBudget}
-            onAddGoal={addSavingsGoal}
-            onUpdateGoal={updateSavingsGoal}
-            onDeleteGoal={deleteSavingsGoal}
-            onUpdateEmergencyFund={updateEmergencyFund}
+          <MoneyFlow
+            Transaction={Transaction}
+            Budget={Budget}
+            Loans={Loans}
+            transactionProps={{
+              transactions,
+              budgets,
+              savingsGoals,
+              emergencyFund,
+              onAddTransaction: addTransaction,
+              onAddBulkTransactions: addBulkTransactions,
+              onUpdateTransaction: updateTransaction,
+              onDeleteTransaction: deleteTransaction,
+              customCategories,
+              onAddCustomCategory: addCustomCategory,
+              onUpdateSavingsGoal: updateSavingsGoal,
+              onUpdateEmergencyFund: updateEmergencyFund
+            }}
+            budgetProps={{
+              ...commonProps,
+              customCategories,
+              onAddCustomCategory: addCustomCategory,
+              onAddBudget: addBudget,
+              onUpdateBudget: updateBudget,
+              onDeleteBudget: deleteBudget,
+              onAddGoal: addSavingsGoal,
+              onUpdateGoal: updateSavingsGoal,
+              onDeleteGoal: deleteSavingsGoal,
+              onUpdateEmergencyFund: updateEmergencyFund
+            }}
+            loanProps={{
+              loans,
+              onAddLoan: addLoan,
+              onUpdateLoan: updateLoan,
+              onDeleteLoan: deleteLoan
+            }}
           />
         )
-      case 'transaction':
+      case 'wealth':
         return (
-          <Transaction
-            transactions={transactions}
-            budgets={budgets}
-            savingsGoals={savingsGoals}
-            emergencyFund={emergencyFund}
-            onAddTransaction={addTransaction}
-            onAddBulkTransactions={addBulkTransactions}
-            onUpdateTransaction={updateTransaction}
-            onDeleteTransaction={deleteTransaction}
-            customCategories={customCategories}
-            onAddCustomCategory={addCustomCategory}
-            onUpdateSavingsGoal={updateSavingsGoal}
-            onUpdateEmergencyFund={updateEmergencyFund}
-            loans={loans}
-            onAddLoan={addLoan}
-            onUpdateLoan={updateLoan}
-            onDeleteLoan={deleteLoan}
+          <Wealth
+            Investment={Investment}
+            Assets={Assets}
+            CPF={CPF}
+            investmentProps={{
+              investments,
+              onAddInvestment: addInvestment,
+              onDeleteInvestment: deleteInvestment
+            }}
+            assetsProps={{
+              cards,
+              onAddCard: addCard,
+              onUpdateCard: updateCard,
+              onDeleteCard: deleteCard
+            }}
+            cpfProps={{
+              cpfData,
+              onUpdateCPF: updateCPF,
+              transactions
+            }}
+          />
+        )
+      case 'protection':
+        return (
+          <ProtectionObligations
+            Insurance={Insurance}
+            Tax={Tax}
+            insuranceProps={{
+              policies: insurancePolicies,
+              onAddPolicy: addInsurancePolicy,
+              onUpdatePolicy: updateInsurancePolicy,
+              onDeletePolicy: deleteInsurancePolicy
+            }}
+            taxProps={{
+              transactions,
+              cpfData
+            }}
           />
         )
       case 'calendar':
         return <Calendar transactions={transactions} />
-      case 'cpf':
-        return <CPF cpfData={cpfData} onUpdateCPF={updateCPF} transactions={transactions} />
-      case 'assets':
-        return (
-          <Assets
-            cards={cards}
-            onAddCard={addCard}
-            onUpdateCard={updateCard}
-            onDeleteCard={deleteCard}
-          />
-        )
-      case 'tax':
-        return <Tax transactions={transactions} cpfData={cpfData} />
       default:
         return <Dashboard {...commonProps} />
     }
